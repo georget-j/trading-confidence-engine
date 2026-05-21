@@ -1,6 +1,7 @@
 import type {
   ChatParseResponse,
   FinalAnswer,
+  MethodEntry,
   OptionsPricingRequest,
   PortfolioRequest,
   VaRRequest,
@@ -39,4 +40,10 @@ export function optimizePortfolio(
   payload: PortfolioRequest,
 ): Promise<FinalAnswer> {
   return postJson<FinalAnswer>("/calc/portfolio/optimize", payload);
+}
+
+export async function listMethods(): Promise<MethodEntry[]> {
+  const r = await fetch(`${API_BASE}/api/methods`);
+  if (!r.ok) throw new Error(`API ${r.status}: ${await r.text()}`);
+  return (await r.json()) as MethodEntry[];
 }

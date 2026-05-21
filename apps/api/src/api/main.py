@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
 from src.api.routes import chat as chat_routes  # noqa: E402  (after load_dotenv)
+from src.api.routes import methods as methods_routes  # noqa: E402
 from src.api.routes import options as options_routes  # noqa: E402
 from src.api.routes import portfolio as portfolio_routes  # noqa: E402
 from src.api.routes import risk as risk_routes  # noqa: E402
@@ -52,6 +53,7 @@ app.include_router(
     portfolio_routes.router, prefix="/calc/portfolio", tags=["portfolio"]
 )
 app.include_router(chat_routes.router, prefix="/chat", tags=["chat"])
+app.include_router(methods_routes.router, prefix="/api/methods", tags=["methods"])
 
 
 @app.get("/health")

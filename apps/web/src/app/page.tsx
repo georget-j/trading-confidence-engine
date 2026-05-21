@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FirstRunTour } from "@/components/FirstRunTour";
 import { Glossary } from "@/components/Glossary";
+import { Methods } from "@/components/Methods";
 import { PortfolioForm } from "@/components/PortfolioForm";
 import { PortfolioResultCard } from "@/components/PortfolioResultCard";
 import {
@@ -120,6 +121,7 @@ export default function Home() {
             </p>
           </div>
           <nav className="flex shrink-0 items-center gap-4 pt-2 text-xs">
+            <Methods />
             <Glossary />
             <button
               type="button"

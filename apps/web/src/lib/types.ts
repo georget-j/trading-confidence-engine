@@ -134,6 +134,24 @@ export interface VaRRequest {
   monte_carlo_paths?: number;
 }
 
+// ---- Method catalog ----
+
+export type Cost = "negligible" | "cheap" | "moderate" | "expensive";
+
+export interface MethodEntry {
+  calculator_id: string;
+  family: string;
+  method_name: string;
+  one_line: string;
+  long_description: string;
+  inputs_required: string[];
+  domain_of_validity: string[];
+  domain_limits: string[];
+  invariants_checked: string[];
+  cost: Cost;
+  independent_methods: string[];
+}
+
 // ---- Portfolio request ----
 
 export interface PortfolioRequest {
