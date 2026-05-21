@@ -48,7 +48,7 @@ disallow_untyped_defs = true
 files = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["py_vollib.*", "QuantLib.*", "scipy.*", "yfinance.*"]
+module = ["py_vollib.*", "QuantLib.*", "scipy.*", "yfinance.*", "pandas", "pandas.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

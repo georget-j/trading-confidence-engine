@@ -118,16 +118,20 @@ def _kkt_stationarity(
 ) -> InvariantCheck:
     """Verify the mean-variance optimum satisfies the KKT stationarity condition.
 
-    γΣw - μ + λ·1 - μ_dual = 0 with μ_dual ≥ 0 and μ_dual_i·w_i = 0.
+    Lagrangian for max μᵀw − (γ/2)wᵀΣw s.t. 1ᵀw = 1, w ≥ 0:
+        L = −μᵀw + (γ/2)wᵀΣw + λ(1ᵀw − 1) − μ_dᵀw       (μ_d ≥ 0)
+        ∂L/∂w_i = 0  ⟹  μ_d_i = g_i + λ      where  g_i = γΣw_i − μ_i
 
-    The clean test: define g = γΣw - μ. Project g onto the constraint normal
-    cone — at the KKT optimum, g should equal λ·1 - μ_dual with μ_dual ≥ 0 and
-    μ_dual_i = 0 for active (w_i > 0) variables. Concretely, all *active*
-    components of g must be equal to a common λ. Components that differ by
-    more than KKT_STATIONARITY_TOL indicate non-optimality.
+    Therefore:
+      - ACTIVE   (w_i > 0, μ_d_i = 0):   g_i = −λ. All active g_i must equal
+                                          a common value (which equals −λ).
+      - INACTIVE (w_i = 0, μ_d_i ≥ 0):   g_i ≥ −λ. Negative deviation is the
+                                          violation.
+
+    We estimate −λ as the mean of g on the active set, then check both
+    conditions against KKT_STATIONARITY_TOL.
     """
-    _, cov = returns_stats(returns_matrix)
-    mu, _ = returns_stats(returns_matrix)
+    mu, cov = returns_stats(returns_matrix)
     g = req.risk_aversion * (cov @ weights) - mu
 
     active = weights > 1e-6
@@ -140,25 +144,27 @@ def _kkt_stationarity(
         )
 
     g_active = g[active]
-    lam_est = float(np.mean(g_active))
-    deviation = float(np.max(np.abs(g_active - lam_est)))
+    lam_est = float(np.mean(g_active))  # this is −λ
+    active_deviation = float(np.max(np.abs(g_active - lam_est)))
 
-    # Inactive constraints: μ_dual_i = lam - g_i must be ≥ 0, i.e. g_i ≤ lam.
+    # Inactive constraints: require g_i ≥ −λ. Violation magnitude is how far
+    # below −λ the worst inactive g_i sits. Positive values of (lam_est − g_i)
+    # indicate violation; we clip at 0.
     inactive_violation = 0.0
     if not np.all(active):
         g_inactive = g[~active]
-        inactive_violation = float(np.max(g_inactive - lam_est))
+        inactive_violation = float(max(0.0, np.max(lam_est - g_inactive)))
 
     passed = (
-        deviation <= KKT_STATIONARITY_TOL
+        active_deviation <= KKT_STATIONARITY_TOL
         and inactive_violation <= KKT_STATIONARITY_TOL
     )
     detail = (
         None
         if passed
         else (
-            f"max active-component deviation from λ={lam_est:.6g}: {deviation:.3e}; "
-            f"max inactive violation (should be ≤0): {inactive_violation:.3e}"
+            f"active-set deviation from −λ={lam_est:.6g}: {active_deviation:.3e}; "
+            f"inactive-set violation (should be 0): {inactive_violation:.3e}"
         )
     )
     return InvariantCheck(
