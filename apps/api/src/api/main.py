@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import chat as chat_routes
-from src.api.routes import options as options_routes
+# Load apps/api/.env if present. Real env vars always win over the .env file,
+# so production deploys (Railway/Fly) inject secrets normally.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
+
+from src.api.routes import chat as chat_routes  # noqa: E402  (after load_dotenv)
+from src.api.routes import options as options_routes  # noqa: E402
 
 app = FastAPI(
     title="Trading Confidence Engine",

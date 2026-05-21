@@ -36,6 +36,29 @@ pnpm install
 pnpm dev
 ```
 
+## LLM setup (optional — needed only for chat input)
+
+The structured form (`/calc/options/price`) works without an LLM. The chat
+input (`/chat/parse`, `/chat/price`) needs a provider key.
+
+1. Copy the template into a gitignored `.env`:
+
+   ```bash
+   cp apps/api/env.example apps/api/.env
+   ```
+
+2. Open `apps/api/.env` and uncomment + fill in **one** provider:
+   - Anthropic (default model `anthropic/claude-haiku-4-5-20251001`):
+     `ANTHROPIC_API_KEY=sk-ant-...`
+   - OpenAI (set `LLM_MODEL=openai/gpt-4o-mini`):
+     `OPENAI_API_KEY=sk-proj-...`
+
+3. Restart the API (`make api`). `apps/api/.env` is loaded automatically.
+
+**Never commit `.env`.** It is gitignored. If you accidentally paste a key
+into a chat, terminal output, or commit, treat it as compromised and rotate it
+at the provider's dashboard.
+
 ## Verification status meanings
 
 | Status               | Meaning                                                               |
