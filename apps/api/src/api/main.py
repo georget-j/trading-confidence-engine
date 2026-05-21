@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,10 +18,21 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS for the Next.js dev frontend. Tighten in production.
+# CORS for the Next.js dev frontend. Tighten in production by setting
+# CORS_ALLOWED_ORIGINS to a comma-separated list of permitted origins.
+_default_origins = (
+    "http://localhost:3000,http://localhost:3001,"
+    "http://127.0.0.1:3000,http://127.0.0.1:3001"
+)
+_origins = [
+    o.strip()
+    for o in os.getenv("CORS_ALLOWED_ORIGINS", _default_origins).split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
