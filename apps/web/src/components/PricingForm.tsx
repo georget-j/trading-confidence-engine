@@ -1,63 +1,105 @@
 "use client";
 
-import { useState } from "react";
 import type { OptionsPricingRequest, OptionType } from "@/lib/types";
 
-interface Props {
-  onSubmit: (req: OptionsPricingRequest) => void;
-  loading: boolean;
+export interface PricingFormState {
+  spot: string;
+  strike: string;
+  days: string;
+  vol: string;
+  rate: string;
+  div: string;
+  optionType: OptionType;
 }
 
-export function PricingForm({ onSubmit, loading }: Props) {
-  const [spot, setSpot] = useState("450");
-  const [strike, setStrike] = useState("450");
-  const [days, setDays] = useState("30");
-  const [vol, setVol] = useState("18");
-  const [rate, setRate] = useState("5");
-  const [div, setDiv] = useState("1.3");
-  const [optionType, setOptionType] = useState<OptionType>("call");
+export const DEFAULT_FORM_STATE: PricingFormState = {
+  spot: "450",
+  strike: "450",
+  days: "30",
+  vol: "18",
+  rate: "5",
+  div: "1.3",
+  optionType: "call",
+};
+
+interface Props {
+  state: PricingFormState;
+  onChange: (next: PricingFormState) => void;
+  onSubmit: (req: OptionsPricingRequest) => void;
+  loading: boolean;
+  highlight?: boolean;
+}
+
+export function PricingForm({
+  state,
+  onChange,
+  onSubmit,
+  loading,
+  highlight,
+}: Props) {
+  const set = <K extends keyof PricingFormState>(
+    k: K,
+    v: PricingFormState[K],
+  ) => onChange({ ...state, [k]: v });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit({
-      spot: parseFloat(spot),
-      strike: parseFloat(strike),
-      time_to_expiry_years: parseFloat(days) / 365,
-      volatility: parseFloat(vol) / 100,
-      risk_free_rate: parseFloat(rate) / 100,
-      dividend_yield: parseFloat(div) / 100,
-      option_type: optionType,
+      spot: parseFloat(state.spot),
+      strike: parseFloat(state.strike),
+      time_to_expiry_years: parseFloat(state.days) / 365,
+      volatility: parseFloat(state.vol) / 100,
+      risk_free_rate: parseFloat(state.rate) / 100,
+      dividend_yield: parseFloat(state.div) / 100,
+      option_type: state.optionType,
       style: "european",
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className={`space-y-4 ${
+        highlight
+          ? "rounded-lg ring-2 ring-emerald-300 ring-offset-2 transition"
+          : ""
+      }`}
+    >
       <div className="grid grid-cols-2 gap-4">
         <Field
           label="Underlying spot"
-          value={spot}
-          onChange={setSpot}
+          value={state.spot}
+          onChange={(v) => set("spot", v)}
           suffix="$"
         />
-        <Field label="Strike" value={strike} onChange={setStrike} suffix="$" />
+        <Field
+          label="Strike"
+          value={state.strike}
+          onChange={(v) => set("strike", v)}
+          suffix="$"
+        />
         <Field
           label="Days to expiry"
-          value={days}
-          onChange={setDays}
+          value={state.days}
+          onChange={(v) => set("days", v)}
           suffix="d"
         />
-        <Field label="Implied vol" value={vol} onChange={setVol} suffix="%" />
+        <Field
+          label="Implied vol"
+          value={state.vol}
+          onChange={(v) => set("vol", v)}
+          suffix="%"
+        />
         <Field
           label="Risk-free rate"
-          value={rate}
-          onChange={setRate}
+          value={state.rate}
+          onChange={(v) => set("rate", v)}
           suffix="%"
         />
         <Field
           label="Dividend yield"
-          value={div}
-          onChange={setDiv}
+          value={state.div}
+          onChange={(v) => set("div", v)}
           suffix="%"
         />
       </div>
@@ -69,9 +111,9 @@ export function PricingForm({ onSubmit, loading }: Props) {
             <button
               key={t}
               type="button"
-              onClick={() => setOptionType(t)}
+              onClick={() => set("optionType", t)}
               className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition ${
-                optionType === t
+                state.optionType === t
                   ? "bg-zinc-900 text-white"
                   : "text-zinc-600 hover:bg-zinc-100"
               }`}
@@ -124,4 +166,18 @@ function Field({
       </div>
     </div>
   );
+}
+
+export function formStateFromRequest(
+  req: OptionsPricingRequest,
+): PricingFormState {
+  return {
+    spot: String(req.spot),
+    strike: String(req.strike),
+    days: String(Math.round(req.time_to_expiry_years * 365)),
+    vol: (req.volatility * 100).toFixed(2),
+    rate: (req.risk_free_rate * 100).toFixed(2),
+    div: (req.dividend_yield * 100).toFixed(2),
+    optionType: req.option_type,
+  };
 }

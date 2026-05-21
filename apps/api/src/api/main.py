@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.api.routes import chat as chat_routes
 from src.api.routes import options as options_routes
 
 app = FastAPI(
@@ -38,6 +39,7 @@ app.add_middleware(
 )
 
 app.include_router(options_routes.router, prefix="/calc/options", tags=["options"])
+app.include_router(chat_routes.router, prefix="/chat", tags=["chat"])
 
 
 @app.get("/health")

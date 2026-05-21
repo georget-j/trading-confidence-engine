@@ -13,6 +13,7 @@ dependencies = [
     "QuantLib>=1.36",
     "numpy>=2.0.0",
     "scipy>=1.14.0",
+    "litellm>=1.55.0",
 ]
 
 [dependency-groups]

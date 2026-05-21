@@ -77,3 +77,24 @@ export interface FinalAnswer {
   limitations: string[];
   timestamp: string;
 }
+
+// ---- Chat / LLM-parsed types ----
+
+export interface LLMOptionsParse {
+  spot: number | null;
+  strike: number | null;
+  time_to_expiry_days: number | null;
+  volatility_pct: number | null;
+  risk_free_rate_pct: number | null;
+  dividend_yield_pct: number | null;
+  option_type: OptionType | null;
+  style: OptionStyle | null;
+  parse_confidence: number;
+  parser_notes: string[];
+}
+
+export interface ChatParseResponse {
+  structured: OptionsPricingRequest | null;
+  raw_parse: LLMOptionsParse;
+  ready_to_price: boolean;
+}

@@ -1,17 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { PricingForm } from "@/components/PricingForm";
+import { ChatPanel } from "@/components/ChatPanel";
+import {
+  DEFAULT_FORM_STATE,
+  formStateFromRequest,
+  PricingForm,
+  type PricingFormState,
+} from "@/components/PricingForm";
 import { ResultCard } from "@/components/ResultCard";
 import { priceOption } from "@/lib/api";
 import type { FinalAnswer, OptionsPricingRequest } from "@/lib/types";
 
 export default function Home() {
+  const [formState, setFormState] =
+    useState<PricingFormState>(DEFAULT_FORM_STATE);
   const [answer, setAnswer] = useState<FinalAnswer | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [highlightForm, setHighlightForm] = useState(false);
 
-  async function handleSubmit(req: OptionsPricingRequest) {
+  async function handlePrice(req: OptionsPricingRequest) {
     setError(null);
     setLoading(true);
     try {
@@ -25,9 +34,15 @@ export default function Home() {
     }
   }
 
+  function handleChatParsed(req: OptionsPricingRequest) {
+    setFormState(formStateFromRequest(req));
+    setHighlightForm(true);
+    window.setTimeout(() => setHighlightForm(false), 1500);
+  }
+
   return (
     <main className="min-h-dvh bg-zinc-50">
-      <div className="mx-auto max-w-6xl px-6 py-12">
+      <div className="mx-auto max-w-7xl px-6 py-12">
         <header className="mb-10">
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
             Trading Confidence Engine
@@ -37,18 +52,31 @@ export default function Home() {
             <span className="font-medium text-zinc-900">
               two independent methods
             </span>{" "}
-            cross-verified against no-arbitrage invariants. Every answer carries
-            a verification status — the engine refuses to confidently report
-            results it can&apos;t verify.
+            cross-verified against no-arbitrage invariants. Ask in plain English
+            (the LLM only extracts inputs — it never produces prices) or fill
+            the form directly.
           </p>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-[1fr_1.4fr]">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.2fr]">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+              Chat input
+            </h2>
+            <ChatPanel onParsed={handleChatParsed} />
+          </section>
+
           <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-sm font-semibold text-zinc-900">
               European option
             </h2>
-            <PricingForm onSubmit={handleSubmit} loading={loading} />
+            <PricingForm
+              state={formState}
+              onChange={setFormState}
+              onSubmit={handlePrice}
+              loading={loading}
+              highlight={highlightForm}
+            />
           </section>
 
           <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

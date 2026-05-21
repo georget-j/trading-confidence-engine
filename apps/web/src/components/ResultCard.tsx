@@ -1,4 +1,5 @@
 import type { FinalAnswer } from "@/lib/types";
+import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { VerificationBadge } from "./VerificationBadge";
 
 interface Props {
@@ -27,6 +28,8 @@ export function ResultCard({ answer }: Props) {
       <p className="text-sm leading-relaxed text-zinc-700">
         {answer.explanation}
       </p>
+
+      <ConfidenceBreakdown verification={answer.verification} />
 
       {greeks && (
         <div>
