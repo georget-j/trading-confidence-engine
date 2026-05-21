@@ -5,6 +5,7 @@ import { InfoTooltip } from "./InfoTooltip";
 import { MethodComparisonBars } from "./MethodComparisonBars";
 import { VaRHistogram } from "./VaRHistogram";
 import { VerificationBadge } from "./VerificationBadge";
+import { WhyPartialExpander } from "./WhyPartialExpander";
 
 interface Props {
   answer: FinalAnswer;
@@ -57,6 +58,13 @@ export function RiskResultCard({ answer, request }: Props) {
       <p className="text-sm leading-relaxed text-zinc-700">
         {answer.explanation}
       </p>
+
+      <WhyPartialExpander
+        status={answer.verification_status}
+        verification={answer.verification}
+        calculatorResults={answer.calculator_results}
+        family="var"
+      />
 
       <ConfidenceBreakdown verification={answer.verification} />
 

@@ -121,6 +121,108 @@ export const VERIFICATION_STATUS = {
   },
 };
 
+export interface GlossaryEntry {
+  term: string;
+  short: string;
+  long: string;
+  alsoSee?: string[];
+}
+
+/** Terms most likely to confuse a retail user, ordered roughly by how often
+ *  they appear in the UI. */
+export const GLOSSARY: GlossaryEntry[] = [
+  {
+    term: "Verified",
+    short: "Two independent methods agreed AND every invariant passed.",
+    long: "The engine cross-checks every result with at least two independent calculators (different math, different codebases) and runs no-arbitrage / consistency checks. 'Verified' means everything lined up. It does NOT mean the market will behave this way — just that the model is internally consistent.",
+  },
+  {
+    term: "Partially verified",
+    short: "Methods disagreed enough to be flagged, but not catastrophically.",
+    long: "Real-world data often has 'fat tails' (extreme moves more often than a normal distribution predicts). When that happens, parametric (normal-assumption) results diverge from historical (no-assumption) results — both are individually correct under their own assumptions, but they're answering slightly different questions. Trust the historical method as the safest single number.",
+    alsoSee: ["Fat tails"],
+  },
+  {
+    term: "Not verified",
+    short: "Methods disagreed badly or a math invariant failed.",
+    long: "Either the calculation methods diverged beyond the wide tolerance, or a mathematical identity (e.g. a price below the no-arbitrage lower bound) was violated. The engine refuses to claim a number it can't stand behind.",
+  },
+  {
+    term: "Implied volatility (IV)",
+    short: "The market's expectation of how much the underlying will move.",
+    long: "Annualised, in percent. Derived from option prices, not from historical prices. Higher IV → options cost more. SPY typically sits at 12–20%; meme stocks can be 60%+; FX usually 5–10%.",
+  },
+  {
+    term: "Delta (Δ)",
+    short: "How much the option moves per $1 in the underlying.",
+    long: "Calls have delta in [0, 1]; puts in [-1, 0]. An at-the-money call has delta around 0.5: if the underlying moves up $1, the option gains about $0.50.",
+    alsoSee: ["Gamma"],
+  },
+  {
+    term: "Gamma (Γ)",
+    short: "How fast delta itself changes.",
+    long: "High gamma means the option's sensitivity flips quickly — a small move in the underlying changes the risk profile a lot. Always non-negative for vanilla calls and puts.",
+    alsoSee: ["Delta"],
+  },
+  {
+    term: "Vega (ν)",
+    short: "Sensitivity to a change in implied vol.",
+    long: "How much the option price moves per 1-percentage-point change in implied vol. Long-dated, at-the-money options carry the most vega.",
+  },
+  {
+    term: "Theta (Θ)",
+    short: "Time decay — what you lose per day if nothing else changes.",
+    long: "Always negative for long option positions. Short-dated at-the-money options decay fastest near expiry.",
+  },
+  {
+    term: "Rho (ρ)",
+    short: "Sensitivity to a change in the risk-free rate.",
+    long: "Usually small. Matters mostly on long-dated (months/years) options.",
+  },
+  {
+    term: "Value at Risk (VaR)",
+    short: "The most you'd expect to lose under a given confidence level.",
+    long: "A 95% VaR of $200 means: on 95 out of 100 days, your loss will be smaller than $200. On the remaining 5 days, the loss can be much larger — VaR does not bound the maximum loss.",
+    alsoSee: ["Expected Shortfall (CVaR)"],
+  },
+  {
+    term: "Expected Shortfall (CVaR)",
+    short: "The average loss on days when losses exceed VaR.",
+    long: "Always at least as bad as VaR — often quite a bit worse on fat-tailed assets. A useful 'when things go wrong, here's the typical magnitude' number.",
+    alsoSee: ["Value at Risk (VaR)"],
+  },
+  {
+    term: "Fat tails",
+    short:
+      "Real returns have more extreme moves than a normal distribution predicts.",
+    long: "If returns were perfectly normal, a -5% day would happen once every ~30 years. In reality, equities see -5% days every few years. Parametric (normal-assumption) VaR understates real risk on fat-tailed assets; historical VaR captures it (within the limits of the sample).",
+  },
+  {
+    term: "No-arbitrage bounds",
+    short: "Hard mathematical limits no option price can violate.",
+    long: "For a call: price ≥ max(S·e^{-qT} − K·e^{-rT}, 0) and price ≤ S·e^{-qT}. Mirror conditions hold for puts. Violation means money-for-nothing exists, which means the price is wrong.",
+  },
+  {
+    term: "Parametric VaR",
+    short:
+      "VaR computed using a closed-form formula under the normal assumption.",
+    long: "Fast and smooth, but biased when real returns aren't normal. Compare against historical VaR — if they diverge, the normal assumption is the suspect.",
+    alsoSee: ["Historical VaR", "Fat tails"],
+  },
+  {
+    term: "Historical VaR",
+    short:
+      "VaR computed directly from past returns — no distributional assumption.",
+    long: "The most honest single number when real returns are non-normal. Limited by the sample (95% VaR on 252 trading days only sees ~13 'worst' days).",
+    alsoSee: ["Parametric VaR"],
+  },
+  {
+    term: "Monte Carlo VaR",
+    short: "VaR estimated by simulating many random return paths.",
+    long: "Sampling-based: numerically distinct from both closed-form and historical. Useful as an independent third method. We use a fixed random seed so identical inputs reproduce exactly.",
+  },
+];
+
 export const SCORES = {
   method_agreement: {
     label: "Method agreement",

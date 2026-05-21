@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
+import { FirstRunTour } from "@/components/FirstRunTour";
+import { Glossary } from "@/components/Glossary";
 import {
   DEFAULT_FORM_STATE,
   formStateFromRequest,
@@ -37,6 +39,10 @@ export default function Home() {
   const [riskRequest, setRiskRequest] = useState<VaRRequest | null>(null);
   const [riskLoading, setRiskLoading] = useState(false);
   const [riskError, setRiskError] = useState<string | null>(null);
+
+  // Tour can be re-opened from the header "Help" link even after it's been
+  // dismissed (localStorage flag stays set; we just re-render with a new key).
+  const [tourReopenKey, setTourReopenKey] = useState(0);
 
   async function handlePriceOption(req: OptionsPricingRequest) {
     setOptionsError(null);
@@ -79,16 +85,30 @@ export default function Home() {
   return (
     <main className="min-h-dvh bg-zinc-50">
       <div className="mx-auto max-w-7xl px-6 py-12">
-        <header className="mb-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Trading Confidence Engine
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-zinc-600">
-            Independent calculators cross-verified against domain invariants.
-            Every answer carries a verification status — the engine refuses to
-            confidently report what it can&apos;t verify.
-          </p>
+        <header className="mb-8 flex items-start justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              Trading Confidence Engine
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-zinc-600">
+              Independent calculators cross-verified against domain invariants.
+              Every answer carries a verification status — the engine refuses to
+              confidently report what it can&apos;t verify.
+            </p>
+          </div>
+          <nav className="flex shrink-0 items-center gap-4 pt-2 text-xs">
+            <Glossary />
+            <button
+              type="button"
+              onClick={() => setTourReopenKey((k) => k + 1)}
+              className="font-medium text-zinc-600 transition hover:text-zinc-900"
+            >
+              Tour
+            </button>
+          </nav>
         </header>
+
+        <FirstRunTour key={tourReopenKey} forceOpen={tourReopenKey > 0} />
 
         <div className="mb-6 inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
           <TabButton

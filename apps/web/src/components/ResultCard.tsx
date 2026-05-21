@@ -8,6 +8,7 @@ import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { PayoffChart } from "./PayoffChart";
 import { VerificationBadge } from "./VerificationBadge";
+import { WhyPartialExpander } from "./WhyPartialExpander";
 
 interface Props {
   answer: FinalAnswer;
@@ -49,6 +50,13 @@ export function ResultCard({ answer, request }: Props) {
       <p className="text-sm leading-relaxed text-zinc-700">
         {answer.explanation}
       </p>
+
+      <WhyPartialExpander
+        status={answer.verification_status}
+        verification={answer.verification}
+        calculatorResults={answer.calculator_results}
+        family="options"
+      />
 
       <ConfidenceBreakdown verification={answer.verification} />
 
