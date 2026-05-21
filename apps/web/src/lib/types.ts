@@ -71,10 +71,60 @@ export interface PortfolioPayload {
   instability_score: number | null;
 }
 
+// ---- Backtest ----
+
+export type BacktestStrategy = "buy_and_hold" | "ma_crossover" | "momentum";
+
+export interface BacktestMetrics {
+  total_return: number;
+  annualised_return: number;
+  annualised_volatility: number;
+  sharpe_ratio: number;
+  max_drawdown: number;
+  calmar_ratio: number;
+  win_rate: number;
+  n_trades: number;
+}
+
+export interface EquityPoint {
+  day_index: number;
+  equity: number;
+  position: number;
+}
+
+export interface SlippageSensitivity {
+  bps: number[];
+  total_return: number[];
+}
+
+export interface BacktestPayload {
+  kind: "backtest";
+  strategy: BacktestStrategy;
+  ticker: string;
+  metrics: BacktestMetrics;
+  benchmark_metrics: BacktestMetrics | null;
+  equity_curve: EquityPoint[];
+  slippage_sensitivity: SlippageSensitivity;
+  walk_forward_reproducible: boolean;
+  lookahead_clean: boolean;
+}
+
+export interface BacktestRequest {
+  ticker: string;
+  lookback_days?: number;
+  strategy?: BacktestStrategy;
+  initial_capital?: number;
+  slippage_bps?: number;
+  ma_fast?: number;
+  ma_slow?: number;
+  momentum_lookback?: number;
+}
+
 export type CalcResultPayload =
   | OptionsPriceResult
   | VaRPayload
-  | PortfolioPayload;
+  | PortfolioPayload
+  | BacktestPayload;
 
 export interface CalculatorResult {
   calculator_id: string;

@@ -1,4 +1,5 @@
 import type {
+  BacktestRequest,
   ChatParseResponse,
   FinalAnswer,
   MethodEntry,
@@ -40,6 +41,10 @@ export function optimizePortfolio(
   payload: PortfolioRequest,
 ): Promise<FinalAnswer> {
   return postJson<FinalAnswer>("/calc/portfolio/optimize", payload);
+}
+
+export function runBacktest(payload: BacktestRequest): Promise<FinalAnswer> {
+  return postJson<FinalAnswer>("/calc/backtest/run", payload);
 }
 
 export async function listMethods(): Promise<MethodEntry[]> {

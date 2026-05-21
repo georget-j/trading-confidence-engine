@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { BacktestForm } from "@/components/BacktestForm";
+import { BacktestResultCard } from "@/components/BacktestResultCard";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FirstRunTour } from "@/components/FirstRunTour";
 import { Glossary } from "@/components/Glossary";
@@ -16,15 +18,21 @@ import {
 import { ResultCard } from "@/components/ResultCard";
 import { RiskForm } from "@/components/RiskForm";
 import { RiskResultCard } from "@/components/RiskResultCard";
-import { computeVaR, optimizePortfolio, priceOption } from "@/lib/api";
+import {
+  computeVaR,
+  optimizePortfolio,
+  priceOption,
+  runBacktest,
+} from "@/lib/api";
 import type {
+  BacktestRequest,
   FinalAnswer,
   OptionsPricingRequest,
   PortfolioRequest,
   VaRRequest,
 } from "@/lib/types";
 
-type Tab = "options" | "risk" | "portfolio";
+type Tab = "options" | "risk" | "portfolio" | "backtest";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("options");
@@ -49,6 +57,13 @@ export default function Home() {
   );
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [portfolioError, setPortfolioError] = useState<string | null>(null);
+
+  const [backtestAnswer, setBacktestAnswer] = useState<FinalAnswer | null>(
+    null,
+  );
+  const [backtestCapital, setBacktestCapital] = useState(10_000);
+  const [backtestLoading, setBacktestLoading] = useState(false);
+  const [backtestError, setBacktestError] = useState<string | null>(null);
 
   // Tour can be re-opened from the header "Help" link even after it's been
   // dismissed (localStorage flag stays set; we just re-render with a new key).
@@ -106,6 +121,21 @@ export default function Home() {
     }
   }
 
+  async function handleRunBacktest(req: BacktestRequest) {
+    setBacktestError(null);
+    setBacktestLoading(true);
+    setBacktestCapital(req.initial_capital ?? 10_000);
+    try {
+      const result = await runBacktest(req);
+      setBacktestAnswer(result);
+    } catch (e) {
+      setBacktestError(e instanceof Error ? e.message : String(e));
+      setBacktestAnswer(null);
+    } finally {
+      setBacktestLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-dvh bg-zinc-50">
       <div className="mx-auto max-w-7xl px-6 py-12">
@@ -150,6 +180,12 @@ export default function Home() {
             onClick={() => setTab("portfolio")}
           >
             Portfolio
+          </TabButton>
+          <TabButton
+            active={tab === "backtest"}
+            onClick={() => setTab("backtest")}
+          >
+            Backtest
           </TabButton>
         </div>
 
@@ -236,6 +272,34 @@ export default function Home() {
             >
               {portfolioAnswer && (
                 <PortfolioResultCard answer={portfolioAnswer} />
+              )}
+            </ResultSection>
+          </div>
+        )}
+
+        {tab === "backtest" && (
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr]">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                Backtest
+              </h2>
+              <BacktestForm
+                onSubmit={handleRunBacktest}
+                loading={backtestLoading}
+              />
+            </section>
+
+            <ResultSection
+              loading={backtestLoading}
+              error={backtestError}
+              empty="Pick a ticker and strategy."
+              emptyDetail="Three strategies, configurable slippage, walk-forward reproducibility check, look-ahead bias detector, and a buy-and-hold benchmark for honest alpha comparison."
+            >
+              {backtestAnswer && (
+                <BacktestResultCard
+                  answer={backtestAnswer}
+                  initialCapital={backtestCapital}
+                />
               )}
             </ResultSection>
           </div>

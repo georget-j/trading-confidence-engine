@@ -265,9 +265,81 @@ class PortfolioPayload(_BaseModel):
     )
 
 
+# ---- Backtesting -----------------------------------------------------------
+
+
+class BacktestStrategy(StrEnum):
+    BUY_AND_HOLD = "buy_and_hold"
+    MA_CROSSOVER = "ma_crossover"
+    MOMENTUM = "momentum"
+
+
+class BacktestRequest(_BaseModel):
+    """Inputs for a single-ticker backtest with sensitivity verification."""
+
+    ticker: str
+    lookback_days: Annotated[int, Field(ge=120, le=2520)] = 504
+    strategy: BacktestStrategy = BacktestStrategy.MA_CROSSOVER
+    initial_capital: Annotated[float, Field(gt=0)] = 10_000.0
+    slippage_bps: Annotated[float, Field(ge=0, le=200)] = 5.0
+    # Strategy-specific knobs:
+    ma_fast: Annotated[int, Field(ge=2, le=200)] = 20
+    ma_slow: Annotated[int, Field(ge=3, le=400)] = 50
+    momentum_lookback: Annotated[int, Field(ge=5, le=252)] = 60
+
+
+class EquityPoint(_BaseModel):
+    """One row of the equity curve."""
+
+    day_index: int
+    equity: float
+    position: float = Field(
+        description="Position size at this point (1 = fully invested, 0 = cash)"
+    )
+
+
+class BacktestMetrics(_BaseModel):
+    """Headline performance metrics. All annualised values assume 252 trading days."""
+
+    total_return: float
+    annualised_return: float
+    annualised_volatility: float
+    sharpe_ratio: float
+    max_drawdown: float = Field(description="Largest peak-to-trough decline (positive number).")
+    calmar_ratio: float = Field(description="Annualised return / max drawdown.")
+    win_rate: float = Field(description="Fraction of trading days with positive PnL.")
+    n_trades: int
+
+
+class SlippageSensitivity(_BaseModel):
+    """How total return varies with slippage assumptions."""
+
+    bps: list[float]
+    total_return: list[float]
+
+
+class BacktestPayload(_BaseModel):
+    kind: Literal["backtest"] = "backtest"
+    strategy: BacktestStrategy
+    ticker: str
+    metrics: BacktestMetrics
+    benchmark_metrics: BacktestMetrics | None = Field(
+        None,
+        description="Buy-and-hold comparison on the same data, when the primary strategy isn't BH.",
+    )
+    equity_curve: list[EquityPoint]
+    slippage_sensitivity: SlippageSensitivity
+    walk_forward_reproducible: bool = Field(
+        description="True iff running the backtest twice produces bit-identical equity curves."
+    )
+    lookahead_clean: bool = Field(
+        description="True iff the look-ahead detector found no future-leaking patterns."
+    )
+
+
 # Discriminated union over all calculator payload types.
 CalcResultPayload = Annotated[
-    OptionsPriceResult | VaRPayload | PortfolioPayload,
+    OptionsPriceResult | VaRPayload | PortfolioPayload | BacktestPayload,
     Field(discriminator="kind"),
 ]
 

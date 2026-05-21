@@ -259,4 +259,46 @@ METHOD_CATALOG: list[MethodEntry] = [
         cost=Cost.MODERATE,
         independent_methods=["mean_variance_qp"],
     ),
+    # ---- Backtest ----
+    MethodEntry(
+        calculator_id="backtest_engine",
+        family=CalcFamily.BACKTEST,
+        method_name="Single-ticker backtest engine",
+        one_line=(
+            "Runs a position-generating strategy day by day, with slippage, "
+            "walk-forward reproducibility, and look-ahead bias detection."
+        ),
+        long_description=(
+            "Three strategies are exposed today: buy-and-hold, moving-average "
+            "crossover, and trailing-momentum. The engine charges configurable "
+            "slippage on every position change and reports a sensitivity sweep "
+            "(0–50bp). Verification includes: (1) running the backtest twice "
+            "must produce bit-identical equity curves; (2) the look-ahead "
+            "detector compares position-vs-current vs position-vs-future "
+            "correlations and flags strategies whose positions correlate too "
+            "strongly with future returns; (3) when not buy-and-hold, a "
+            "buy-and-hold benchmark on the same data is reported for alpha "
+            "comparison."
+        ),
+        inputs_required=["ticker", "lookback", "strategy", "initial capital", "slippage"],
+        domain_of_validity=[
+            "Single-ticker, long-only strategies",
+            "Daily-bar resolution",
+            "Strategies that depend only on past returns",
+        ],
+        domain_limits=[
+            "No support for multi-asset or short positions",
+            "Slippage model is linear-per-trade — real costs depend on liquidity",
+            "Survivorship bias of the underlying data is not corrected",
+        ],
+        invariants_checked=[
+            "Equity finite and non-negative",
+            "Positions in [0, 1]",
+            "Walk-forward reproducibility (binary)",
+            "Look-ahead bias detector (binary)",
+            "Slippage collapse (graded)",
+        ],
+        cost=Cost.CHEAP,
+        independent_methods=[],
+    ),
 ]
