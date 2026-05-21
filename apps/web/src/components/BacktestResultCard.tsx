@@ -1,12 +1,18 @@
-import type { BacktestPayload, FinalAnswer } from "@/lib/types";
+import type {
+  BacktestPayload,
+  BacktestRequest,
+  FinalAnswer,
+} from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { EquityCurveChart } from "./EquityCurveChart";
+import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
 import { WhyPartialExpander } from "./WhyPartialExpander";
 
 interface Props {
   answer: FinalAnswer;
   initialCapital: number;
+  request?: BacktestRequest;
 }
 
 function isBacktestPayload(
@@ -24,7 +30,7 @@ const STRATEGY_LABEL: Record<string, string> = {
   momentum: "Momentum",
 };
 
-export function BacktestResultCard({ answer, initialCapital }: Props) {
+export function BacktestResultCard({ answer, initialCapital, request }: Props) {
   if (!isBacktestPayload(answer.primary_result)) {
     return (
       <div className="text-sm text-rose-700">
@@ -70,7 +76,17 @@ export function BacktestResultCard({ answer, initialCapital }: Props) {
             </div>
           </div>
         </div>
-        <VerificationBadge status={answer.verification_status} />
+        <div className="flex flex-col items-end gap-2">
+          <VerificationBadge status={answer.verification_status} />
+          {request && (
+            <SaveButton
+              family="backtest"
+              payload={request}
+              defaultLabel={`${request.ticker} · ${STRATEGY_LABEL[p.strategy] ?? p.strategy}`}
+              summary={`${answer.verification_status} · ${(m.total_return * 100).toFixed(1)}%`}
+            />
+          )}
+        </div>
       </div>
 
       <p className="text-sm leading-relaxed text-zinc-700">

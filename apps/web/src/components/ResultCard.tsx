@@ -7,6 +7,7 @@ import type {
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { PayoffChart } from "./PayoffChart";
+import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
 import { WhyPartialExpander } from "./WhyPartialExpander";
 
@@ -44,7 +45,17 @@ export function ResultCard({ answer, request }: Props) {
             ${primary.price.toFixed(4)}
           </div>
         </div>
-        <VerificationBadge status={answer.verification_status} />
+        <div className="flex flex-col items-end gap-2">
+          <VerificationBadge status={answer.verification_status} />
+          {request && (
+            <SaveButton
+              family="options"
+              payload={request}
+              defaultLabel={`${request.option_type.toUpperCase()} ${request.strike} ${Math.round(request.time_to_expiry_years * 365)}d`}
+              summary={`${answer.verification_status} · $${primary.price.toFixed(4)}`}
+            />
+          )}
+        </div>
       </div>
 
       <p className="text-sm leading-relaxed text-zinc-700">

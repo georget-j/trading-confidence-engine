@@ -9,6 +9,7 @@ import { Glossary } from "@/components/Glossary";
 import { Methods } from "@/components/Methods";
 import { PortfolioForm } from "@/components/PortfolioForm";
 import { PortfolioResultCard } from "@/components/PortfolioResultCard";
+import { SavedWorkflows } from "@/components/SavedWorkflows";
 import {
   DEFAULT_FORM_STATE,
   formStateFromRequest,
@@ -18,6 +19,7 @@ import {
 import { ResultCard } from "@/components/ResultCard";
 import { RiskForm } from "@/components/RiskForm";
 import { RiskResultCard } from "@/components/RiskResultCard";
+import type { SavedWorkflow } from "@/lib/workflows";
 import {
   computeVaR,
   optimizePortfolio,
@@ -55,12 +57,16 @@ export default function Home() {
   const [portfolioAnswer, setPortfolioAnswer] = useState<FinalAnswer | null>(
     null,
   );
+  const [portfolioRequest, setPortfolioRequest] =
+    useState<PortfolioRequest | null>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [portfolioError, setPortfolioError] = useState<string | null>(null);
 
   const [backtestAnswer, setBacktestAnswer] = useState<FinalAnswer | null>(
     null,
   );
+  const [backtestRequest, setBacktestRequest] =
+    useState<BacktestRequest | null>(null);
   const [backtestCapital, setBacktestCapital] = useState(10_000);
   const [backtestLoading, setBacktestLoading] = useState(false);
   const [backtestError, setBacktestError] = useState<string | null>(null);
@@ -113,11 +119,31 @@ export default function Home() {
     try {
       const result = await optimizePortfolio(req);
       setPortfolioAnswer(result);
+      setPortfolioRequest(req);
     } catch (e) {
       setPortfolioError(e instanceof Error ? e.message : String(e));
       setPortfolioAnswer(null);
+      setPortfolioRequest(null);
     } finally {
       setPortfolioLoading(false);
+    }
+  }
+
+  function handleLoadWorkflow(wf: SavedWorkflow) {
+    if (wf.family === "options") {
+      setTab("options");
+      const req = wf.payload as OptionsPricingRequest;
+      setOptionsState(formStateFromRequest(req));
+      handlePriceOption(req);
+    } else if (wf.family === "risk") {
+      setTab("risk");
+      handleComputeVaR(wf.payload as VaRRequest);
+    } else if (wf.family === "portfolio") {
+      setTab("portfolio");
+      handleOptimizePortfolio(wf.payload as PortfolioRequest);
+    } else if (wf.family === "backtest") {
+      setTab("backtest");
+      handleRunBacktest(wf.payload as BacktestRequest);
     }
   }
 
@@ -128,9 +154,11 @@ export default function Home() {
     try {
       const result = await runBacktest(req);
       setBacktestAnswer(result);
+      setBacktestRequest(req);
     } catch (e) {
       setBacktestError(e instanceof Error ? e.message : String(e));
       setBacktestAnswer(null);
+      setBacktestRequest(null);
     } finally {
       setBacktestLoading(false);
     }
@@ -151,6 +179,7 @@ export default function Home() {
             </p>
           </div>
           <nav className="flex shrink-0 items-center gap-4 pt-2 text-xs">
+            <SavedWorkflows onLoad={handleLoadWorkflow} />
             <Methods />
             <Glossary />
             <button
@@ -271,7 +300,10 @@ export default function Home() {
               emptyDetail="Convex QP gives the optimal weights. Verification checks KKT conditions, cross-solver agreement, and how much the weights move under small input perturbations — a fragile optimum is honest about being one."
             >
               {portfolioAnswer && (
-                <PortfolioResultCard answer={portfolioAnswer} />
+                <PortfolioResultCard
+                  answer={portfolioAnswer}
+                  request={portfolioRequest ?? undefined}
+                />
               )}
             </ResultSection>
           </div>
@@ -299,6 +331,7 @@ export default function Home() {
                 <BacktestResultCard
                   answer={backtestAnswer}
                   initialCapital={backtestCapital}
+                  request={backtestRequest ?? undefined}
                 />
               )}
             </ResultSection>

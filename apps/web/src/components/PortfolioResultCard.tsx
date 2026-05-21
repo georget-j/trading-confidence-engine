@@ -1,13 +1,19 @@
 import { PORTFOLIO_OUTPUTS } from "@/lib/copy";
-import type { FinalAnswer, PortfolioPayload } from "@/lib/types";
+import type {
+  FinalAnswer,
+  PortfolioPayload,
+  PortfolioRequest,
+} from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
+import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
 import { WeightsChart } from "./WeightsChart";
 import { WhyPartialExpander } from "./WhyPartialExpander";
 
 interface Props {
   answer: FinalAnswer;
+  request?: PortfolioRequest;
 }
 
 function isPortfolioPayload(
@@ -19,7 +25,7 @@ function isPortfolioPayload(
 const FMT_PCT = (v: number, digits: number = 2) =>
   `${(v * 100).toFixed(digits)}%`;
 
-export function PortfolioResultCard({ answer }: Props) {
+export function PortfolioResultCard({ answer, request }: Props) {
   if (!isPortfolioPayload(answer.primary_result)) {
     return (
       <div className="text-sm text-rose-700">
@@ -61,7 +67,17 @@ export function PortfolioResultCard({ answer }: Props) {
             </div>
           </div>
         </div>
-        <VerificationBadge status={answer.verification_status} />
+        <div className="flex flex-col items-end gap-2">
+          <VerificationBadge status={answer.verification_status} />
+          {request && (
+            <SaveButton
+              family="portfolio"
+              payload={request}
+              defaultLabel={`${objLabel} · ${request.tickers.join("/")}`}
+              summary={`${answer.verification_status} · Sharpe ${primary.sharpe_ratio.toFixed(2)}`}
+            />
+          )}
+        </div>
       </div>
 
       <p className="text-sm leading-relaxed text-zinc-700">

@@ -3,6 +3,7 @@ import type { FinalAnswer, VaRPayload, VaRRequest } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { MethodComparisonBars } from "./MethodComparisonBars";
+import { SaveButton } from "./SaveButton";
 import { VaRHistogram } from "./VaRHistogram";
 import { VerificationBadge } from "./VerificationBadge";
 import { WhyPartialExpander } from "./WhyPartialExpander";
@@ -52,7 +53,17 @@ export function RiskResultCard({ answer, request }: Props) {
             <InfoTooltip body={OUTPUTS.cvarLoss.info} />
           </div>
         </div>
-        <VerificationBadge status={answer.verification_status} />
+        <div className="flex flex-col items-end gap-2">
+          <VerificationBadge status={answer.verification_status} />
+          {request && (
+            <SaveButton
+              family="risk"
+              payload={request}
+              defaultLabel={`${request.ticker ?? "VaR"} ${Math.round(request.confidence_level * 100)}%`}
+              summary={`${answer.verification_status} · VaR −${FMT_USD.format(primary.var_loss)}`}
+            />
+          )}
+        </div>
       </div>
 
       <p className="text-sm leading-relaxed text-zinc-700">
