@@ -1,9 +1,17 @@
-import type { FinalAnswer, OptionsPriceResult } from "@/lib/types";
+import { GREEKS } from "@/lib/copy";
+import type {
+  FinalAnswer,
+  OptionsPriceResult,
+  OptionsPricingRequest,
+} from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
+import { InfoTooltip } from "./InfoTooltip";
+import { PayoffChart } from "./PayoffChart";
 import { VerificationBadge } from "./VerificationBadge";
 
 interface Props {
   answer: FinalAnswer;
+  request?: OptionsPricingRequest;
 }
 
 function isOptionsResult(
@@ -12,7 +20,7 @@ function isOptionsResult(
   return p.kind === "options_price";
 }
 
-export function ResultCard({ answer }: Props) {
+export function ResultCard({ answer, request }: Props) {
   if (!isOptionsResult(answer.primary_result)) {
     return (
       <div className="text-sm text-rose-700">
@@ -44,17 +52,58 @@ export function ResultCard({ answer }: Props) {
 
       <ConfidenceBreakdown verification={answer.verification} />
 
+      {request && (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Payoff at expiry
+          </div>
+          <div className="mt-2">
+            <PayoffChart
+              spot={request.spot}
+              strike={request.strike}
+              premium={primary.price}
+              optionType={request.option_type}
+            />
+          </div>
+        </div>
+      )}
+
       {greeks && (
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             Greeks
           </div>
           <div className="mt-2 grid grid-cols-5 gap-2">
-            <Stat label="Δ delta" value={greeks.delta} digits={4} />
-            <Stat label="Γ gamma" value={greeks.gamma} digits={5} />
-            <Stat label="ν vega" value={greeks.vega} digits={4} />
-            <Stat label="Θ theta" value={greeks.theta} digits={4} />
-            <Stat label="ρ rho" value={greeks.rho} digits={4} />
+            <Stat
+              label={GREEKS.delta.label}
+              info={GREEKS.delta.info}
+              value={greeks.delta}
+              digits={4}
+            />
+            <Stat
+              label={GREEKS.gamma.label}
+              info={GREEKS.gamma.info}
+              value={greeks.gamma}
+              digits={5}
+            />
+            <Stat
+              label={GREEKS.vega.label}
+              info={GREEKS.vega.info}
+              value={greeks.vega}
+              digits={4}
+            />
+            <Stat
+              label={GREEKS.theta.label}
+              info={GREEKS.theta.info}
+              value={greeks.theta}
+              digits={4}
+            />
+            <Stat
+              label={GREEKS.rho.label}
+              info={GREEKS.rho.info}
+              value={greeks.rho}
+              digits={4}
+            />
           </div>
         </div>
       )}
@@ -157,14 +206,19 @@ function Stat({
   label,
   value,
   digits,
+  info,
 }: {
   label: string;
   value: number;
   digits: number;
+  info?: string;
 }) {
   return (
     <div className="rounded-md border border-zinc-200 px-2 py-1.5">
-      <div className="text-[10px] text-zinc-500">{label}</div>
+      <div className="flex items-center text-[10px] text-zinc-500">
+        <span>{label}</span>
+        {info && <InfoTooltip body={info} />}
+      </div>
       <div className="font-mono text-xs text-zinc-900">
         {value.toFixed(digits)}
       </div>

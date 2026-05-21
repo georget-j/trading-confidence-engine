@@ -60,6 +60,9 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
             mean_return=mu_h,
             volatility=sigma_h,
             n_observations=int(arr.size),
+            histogram_bins=None,
+            var_return_quantile=None,
+            cvar_return_quantile=None,
         )
         return CalculatorResult(
             calculator_id=CALCULATOR_ID,
@@ -75,6 +78,7 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
             payload=VaRPayload(
                 var_loss=float("nan"), cvar_loss=float("nan"),
                 mean_return=0.0, volatility=0.0, n_observations=0,
+                histogram_bins=None, var_return_quantile=None, cvar_return_quantile=None,
             ),
             duration_ms=(time.perf_counter() - started) * 1000.0,
             succeeded=False,

@@ -143,6 +143,15 @@ class VaRRequest(_BaseModel):
     monte_carlo_paths: Annotated[int, Field(ge=1_000, le=1_000_000)] = 100_000
 
 
+class HistogramBin(_BaseModel):
+    """One bucket of a returns histogram. All edges in decimal return space
+    (e.g. -0.02 = -2% daily return)."""
+
+    bin_min: float
+    bin_max: float
+    count: int
+
+
 class VaRPayload(_BaseModel):
     """Result from one VaR method."""
 
@@ -152,6 +161,17 @@ class VaRPayload(_BaseModel):
     mean_return: float
     volatility: float
     n_observations: int
+    # Optional retail-friendly viz extras. Populated by the historical method
+    # (the no-assumption baseline). Other methods leave these null.
+    histogram_bins: list[HistogramBin] | None = None
+    var_return_quantile: float | None = Field(
+        None,
+        description="Daily return at the VaR threshold (negative). Used for chart shading.",
+    )
+    cvar_return_quantile: float | None = Field(
+        None,
+        description="Mean daily return in the tail beyond VaR. Used for chart shading.",
+    )
 
 
 # Discriminated union over all calculator payload types.

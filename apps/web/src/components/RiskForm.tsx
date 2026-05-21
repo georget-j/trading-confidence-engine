@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { RISK_INPUTS } from "@/lib/copy";
 import type { VaRRequest } from "@/lib/types";
+import { InfoTooltip } from "./InfoTooltip";
 
 interface Props {
   onSubmit: (req: VaRRequest) => void;
@@ -29,7 +31,10 @@ export function RiskForm({ onSubmit, loading }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
-        <label className="text-xs font-medium text-zinc-600">Ticker</label>
+        <div className="flex items-center text-xs font-medium text-zinc-600">
+          <label>{RISK_INPUTS.ticker.label}</label>
+          <InfoTooltip body={RISK_INPUTS.ticker.info} />
+        </div>
         <input
           value={ticker}
           onChange={(e) => setTicker(e.target.value)}
@@ -44,25 +49,29 @@ export function RiskForm({ onSubmit, loading }: Props) {
 
       <div className="grid grid-cols-2 gap-4">
         <NumField
-          label="Portfolio value"
+          label={RISK_INPUTS.portfolio.label}
+          info={RISK_INPUTS.portfolio.info}
           value={portfolio}
           onChange={setPortfolio}
           suffix="$"
         />
         <NumField
-          label="Lookback"
+          label={RISK_INPUTS.lookback.label}
+          info={RISK_INPUTS.lookback.info}
           value={lookback}
           onChange={setLookback}
           suffix="d"
         />
         <NumField
-          label="Confidence"
+          label={RISK_INPUTS.confidence.label}
+          info={RISK_INPUTS.confidence.info}
           value={confidence}
           onChange={setConfidence}
           suffix="%"
         />
         <NumField
-          label="Horizon"
+          label={RISK_INPUTS.horizon.label}
+          info={RISK_INPUTS.horizon.info}
           value={horizon}
           onChange={setHorizon}
           suffix="d"
@@ -85,15 +94,20 @@ function NumField({
   value,
   onChange,
   suffix,
+  info,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   suffix?: string;
+  info?: string;
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-zinc-600">{label}</label>
+      <div className="flex items-center text-xs font-medium text-zinc-600">
+        <label>{label}</label>
+        {info && <InfoTooltip body={info} />}
+      </div>
       <div className="relative">
         <input
           type="number"

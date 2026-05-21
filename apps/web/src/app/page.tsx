@@ -27,11 +27,14 @@ export default function Home() {
   const [optionsState, setOptionsState] =
     useState<PricingFormState>(DEFAULT_FORM_STATE);
   const [optionsAnswer, setOptionsAnswer] = useState<FinalAnswer | null>(null);
+  const [optionsRequest, setOptionsRequest] =
+    useState<OptionsPricingRequest | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [optionsError, setOptionsError] = useState<string | null>(null);
   const [highlightForm, setHighlightForm] = useState(false);
 
   const [riskAnswer, setRiskAnswer] = useState<FinalAnswer | null>(null);
+  const [riskRequest, setRiskRequest] = useState<VaRRequest | null>(null);
   const [riskLoading, setRiskLoading] = useState(false);
   const [riskError, setRiskError] = useState<string | null>(null);
 
@@ -39,10 +42,13 @@ export default function Home() {
     setOptionsError(null);
     setOptionsLoading(true);
     try {
-      setOptionsAnswer(await priceOption(req));
+      const result = await priceOption(req);
+      setOptionsAnswer(result);
+      setOptionsRequest(req);
     } catch (e) {
       setOptionsError(e instanceof Error ? e.message : String(e));
       setOptionsAnswer(null);
+      setOptionsRequest(null);
     } finally {
       setOptionsLoading(false);
     }
@@ -58,10 +64,13 @@ export default function Home() {
     setRiskError(null);
     setRiskLoading(true);
     try {
-      setRiskAnswer(await computeVaR(req));
+      const result = await computeVaR(req);
+      setRiskAnswer(result);
+      setRiskRequest(req);
     } catch (e) {
       setRiskError(e instanceof Error ? e.message : String(e));
       setRiskAnswer(null);
+      setRiskRequest(null);
     } finally {
       setRiskLoading(false);
     }
@@ -121,7 +130,12 @@ export default function Home() {
               empty="Enter inputs and price an option."
               emptyDetail="py_vollib closed-form and QuantLib Leisen-Reimer binomial run, then a cross-method verifier and no-arbitrage invariants decide the status."
             >
-              {optionsAnswer && <ResultCard answer={optionsAnswer} />}
+              {optionsAnswer && (
+                <ResultCard
+                  answer={optionsAnswer}
+                  request={optionsRequest ?? undefined}
+                />
+              )}
             </ResultSection>
           </div>
         )}
@@ -141,7 +155,12 @@ export default function Home() {
               empty="Pick a ticker and compute VaR."
               emptyDetail="Three independent methods (historical, parametric, Monte Carlo) cross-verified. Divergence between methods becomes a signal about fat tails in the data."
             >
-              {riskAnswer && <RiskResultCard answer={riskAnswer} />}
+              {riskAnswer && (
+                <RiskResultCard
+                  answer={riskAnswer}
+                  request={riskRequest ?? undefined}
+                />
+              )}
             </ResultSection>
           </div>
         )}

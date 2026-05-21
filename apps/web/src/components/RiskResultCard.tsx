@@ -1,9 +1,14 @@
-import type { FinalAnswer, VaRPayload } from "@/lib/types";
+import { OUTPUTS } from "@/lib/copy";
+import type { FinalAnswer, VaRPayload, VaRRequest } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
+import { InfoTooltip } from "./InfoTooltip";
+import { MethodComparisonBars } from "./MethodComparisonBars";
+import { VaRHistogram } from "./VaRHistogram";
 import { VerificationBadge } from "./VerificationBadge";
 
 interface Props {
   answer: FinalAnswer;
+  request?: VaRRequest;
 }
 
 function isVaRPayload(p: FinalAnswer["primary_result"]): p is VaRPayload {
@@ -16,7 +21,7 @@ const FMT_USD = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
 });
 
-export function RiskResultCard({ answer }: Props) {
+export function RiskResultCard({ answer, request }: Props) {
   if (!isVaRPayload(answer.primary_result)) {
     return (
       <div className="text-sm text-rose-700">
@@ -31,17 +36,19 @@ export function RiskResultCard({ answer }: Props) {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
-            Value at Risk
+          <div className="flex items-center text-xs uppercase tracking-wide text-zinc-500">
+            <span>Value at Risk</span>
+            <InfoTooltip body={OUTPUTS.varLoss.info} />
           </div>
           <div className="mt-1 font-mono text-4xl font-semibold text-rose-700">
             −{FMT_USD.format(primary.var_loss)}
           </div>
-          <div className="mt-0.5 text-xs text-zinc-600">
-            Expected shortfall (CVaR):{" "}
-            <span className="font-mono text-zinc-900">
+          <div className="mt-0.5 flex items-center text-xs text-zinc-600">
+            <span>Expected shortfall (CVaR):</span>
+            <span className="ml-1 font-mono text-zinc-900">
               −{FMT_USD.format(primary.cvar_loss)}
             </span>
+            <InfoTooltip body={OUTPUTS.cvarLoss.info} />
           </div>
         </div>
         <VerificationBadge status={answer.verification_status} />
@@ -53,9 +60,30 @@ export function RiskResultCard({ answer }: Props) {
 
       <ConfidenceBreakdown verification={answer.verification} />
 
+      {primary.histogram_bins &&
+        primary.var_return_quantile !== null &&
+        primary.cvar_return_quantile !== null && (
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Return distribution
+            </div>
+            <div className="mt-2">
+              <VaRHistogram
+                bins={primary.histogram_bins}
+                varReturn={primary.var_return_quantile}
+                cvarReturn={primary.cvar_return_quantile}
+                confidenceLevel={request?.confidence_level ?? 0.95}
+              />
+            </div>
+          </div>
+        )}
+
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Method comparison
+        </div>
+        <div className="mt-2">
+          <MethodComparisonBars results={answer.calculator_results} />
         </div>
         {cross && (
           <div className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs">

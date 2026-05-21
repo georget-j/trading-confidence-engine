@@ -33,6 +33,12 @@ export interface OptionsPriceResult {
   greeks: Greeks | null;
 }
 
+export interface HistogramBin {
+  bin_min: number;
+  bin_max: number;
+  count: number;
+}
+
 export interface VaRPayload {
   kind: "var";
   var_loss: number;
@@ -40,6 +46,9 @@ export interface VaRPayload {
   mean_return: number;
   volatility: number;
   n_observations: number;
+  histogram_bins: HistogramBin[] | null;
+  var_return_quantile: number | null;
+  cvar_return_quantile: number | null;
 }
 
 export type CalcResultPayload = OptionsPriceResult | VaRPayload;

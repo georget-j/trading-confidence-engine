@@ -31,6 +31,9 @@ from src.core.schemas import (
 # OR >$0.05 absolute) while not flagging numerical noise from a correct
 # calculation. A genuinely broken invariant — say, a sign-flipped parity — is
 # off by dollars, so this leaves several orders of magnitude of headroom.
+# Note: put-call parity scales its reference against the underlying price
+# (not the cancellation-prone C - P difference), which prevents that check
+# from needing artificially loose tolerances.
 INVARIANT_ABS_TOL = 5e-2
 INVARIANT_REL_TOL = 5e-3
 
@@ -182,7 +185,12 @@ def check_put_call_parity(
     rhs = s_disc - k_disc
     lhs = call_price - put_price
     diff = lhs - rhs
-    passed = _within_tol(diff, max(abs(lhs), abs(rhs)))
+    # Scale the relative tolerance against the underlying price (the natural
+    # scale for parity) rather than max(|LHS|, |RHS|) — the latter is prone to
+    # catastrophic cancellation when C and P are close, making true 5e-5
+    # relative errors look like 5e-3 against the difference.
+    reference_scale = max(req_call.spot, req_call.strike, abs(lhs), abs(rhs))
+    passed = _within_tol(diff, reference_scale)
     return InvariantCheck(
         name="put_call_parity",
         description="C - P == S*e^{-qT} - K*e^{-rT}",

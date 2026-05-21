@@ -1,6 +1,8 @@
 "use client";
 
+import { OPTIONS_INPUTS } from "@/lib/copy";
 import type { OptionsPricingRequest, OptionType } from "@/lib/types";
+import { InfoTooltip } from "./InfoTooltip";
 
 export interface PricingFormState {
   spot: string;
@@ -67,37 +69,43 @@ export function PricingForm({
     >
       <div className="grid grid-cols-2 gap-4">
         <Field
-          label="Underlying spot"
+          label={OPTIONS_INPUTS.spot.label}
+          info={OPTIONS_INPUTS.spot.info}
           value={state.spot}
           onChange={(v) => set("spot", v)}
           suffix="$"
         />
         <Field
-          label="Strike"
+          label={OPTIONS_INPUTS.strike.label}
+          info={OPTIONS_INPUTS.strike.info}
           value={state.strike}
           onChange={(v) => set("strike", v)}
           suffix="$"
         />
         <Field
-          label="Days to expiry"
+          label={OPTIONS_INPUTS.days.label}
+          info={OPTIONS_INPUTS.days.info}
           value={state.days}
           onChange={(v) => set("days", v)}
           suffix="d"
         />
         <Field
-          label="Implied vol"
+          label={OPTIONS_INPUTS.vol.label}
+          info={OPTIONS_INPUTS.vol.info}
           value={state.vol}
           onChange={(v) => set("vol", v)}
           suffix="%"
         />
         <Field
-          label="Risk-free rate"
+          label={OPTIONS_INPUTS.rate.label}
+          info={OPTIONS_INPUTS.rate.info}
           value={state.rate}
           onChange={(v) => set("rate", v)}
           suffix="%"
         />
         <Field
-          label="Dividend yield"
+          label={OPTIONS_INPUTS.div.label}
+          info={OPTIONS_INPUTS.div.info}
           value={state.div}
           onChange={(v) => set("div", v)}
           suffix="%"
@@ -105,7 +113,10 @@ export function PricingForm({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-zinc-600">Option type</label>
+        <div className="flex items-center text-xs font-medium text-zinc-600">
+          <label>{OPTIONS_INPUTS.optionType.label}</label>
+          <InfoTooltip body={OPTIONS_INPUTS.optionType.info} />
+        </div>
         <div className="inline-flex rounded-lg border border-zinc-300 p-0.5">
           {(["call", "put"] as OptionType[]).map((t) => (
             <button
@@ -140,15 +151,20 @@ function Field({
   value,
   onChange,
   suffix,
+  info,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   suffix?: string;
+  info?: string;
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-zinc-600">{label}</label>
+      <div className="flex items-center text-xs font-medium text-zinc-600">
+        <label>{label}</label>
+        {info && <InfoTooltip body={info} />}
+      </div>
       <div className="relative">
         <input
           type="number"
