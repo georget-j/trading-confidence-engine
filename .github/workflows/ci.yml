@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  api:
+    name: API (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install ${{ matrix.python }}
+      - name: Install
+        working-directory: apps/api
+        run: uv sync
+      - name: Ruff
+        working-directory: apps/api
+        run: uv run ruff check src tests
+      - name: Mypy
+        working-directory: apps/api
+        run: uv run mypy src
+      - name: Pytest
+        working-directory: apps/api
+        run: uv run pytest -v
+
+  web:
+    name: Web (Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Install
+        working-directory: apps/web
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        working-directory: apps/web
+        run: pnpm lint
+      - name: Build
+        working-directory: apps/web
+        run: pnpm build
