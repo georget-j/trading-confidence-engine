@@ -12,6 +12,7 @@ import math
 from src.core.schemas import (
     CalculatorResult,
     InvariantCheck,
+    OptionsPriceResult,
     OptionsPricingRequest,
     OptionType,
 )
@@ -47,7 +48,13 @@ def check_options_invariants(
 ) -> list[InvariantCheck]:
     """Run every applicable invariant and return the results."""
     checks: list[InvariantCheck] = []
-    primary = next((r for r in results if r.succeeded), None)
+    primary = next(
+        (
+            r for r in results
+            if r.succeeded and isinstance(r.payload, OptionsPriceResult)
+        ),
+        None,
+    )
     if primary is None:
         checks.append(
             InvariantCheck(
@@ -59,14 +66,16 @@ def check_options_invariants(
         )
         return checks
 
-    price = primary.payload.price
+    payload = primary.payload
+    assert isinstance(payload, OptionsPriceResult)  # narrowing for mypy
+    price = payload.price
 
     checks.append(_non_negative(price))
     checks.append(_lower_bound(req, price))
     checks.append(_upper_bound(req, price))
-    if primary.payload.greeks is not None:
-        checks.append(_delta_in_range(req, primary.payload.greeks.delta))
-        checks.append(_gamma_non_negative(primary.payload.greeks.gamma))
+    if payload.greeks is not None:
+        checks.append(_delta_in_range(req, payload.greeks.delta))
+        checks.append(_gamma_non_negative(payload.greeks.gamma))
 
     return checks
 

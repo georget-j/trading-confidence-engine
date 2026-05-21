@@ -8,7 +8,7 @@ $0.0001 absolute difference on a $0.01 option doesn't fail the check).
 
 from __future__ import annotations
 
-from src.core.schemas import CalculatorResult, CrossMethodCheck
+from src.core.schemas import CalculatorResult, CrossMethodCheck, OptionsPriceResult
 
 # Defaults chosen for European-vanilla options under typical retail conditions.
 # Binomial trees at 801 steps converge to BS within ~1e-4 on price for sensible
@@ -25,12 +25,16 @@ def cross_check_methods(
     rel_tol: float = DEFAULT_PRICE_REL_TOL,
 ) -> CrossMethodCheck | None:
     """Return None if fewer than two successful calculators are available."""
-    succeeded = [r for r in results if r.succeeded]
-    if len(succeeded) < 2:
+    pairs: list[tuple[str, float]] = [
+        (r.calculator_id, r.payload.price)
+        for r in results
+        if r.succeeded and isinstance(r.payload, OptionsPriceResult)
+    ]
+    if len(pairs) < 2:
         return None
 
-    prices = [r.payload.price for r in succeeded]
-    method_ids = [r.calculator_id for r in succeeded]
+    method_ids = [p[0] for p in pairs]
+    prices = [p[1] for p in pairs]
 
     # Pairwise deltas: max absolute and max relative (relative to mean of pair).
     max_abs = 0.0

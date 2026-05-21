@@ -110,11 +110,54 @@ class GreeksPayload(_BaseModel):
 
 
 class OptionsPriceResult(_BaseModel):
+    kind: Literal["options_price"] = "options_price"
     price: float
     greeks: GreeksPayload | None = None
 
 
-CalcResultPayload = OptionsPriceResult  # Discriminated union point for later families.
+# ---- Risk / VaR --------------------------------------------------------------
+
+
+class VaRRequest(_BaseModel):
+    """Inputs for a Value-at-Risk calculation.
+
+    Either `returns` OR (`ticker` + `lookback_days`) must be supplied. VaR is
+    reported as a POSITIVE loss number (e.g. var_95 = 230 means "5% chance of
+    losing more than $230 over the stated horizon").
+    """
+
+    ticker: str | None = Field(
+        None, description="Equity ticker. If set, daily returns are fetched server-side."
+    )
+    lookback_days: Annotated[int, Field(ge=30, le=2520)] = 504  # ~2 years
+    returns: list[float] | None = Field(
+        None,
+        description=(
+            "Daily simple returns (decimal, e.g. 0.012 for +1.2%). If set, "
+            "overrides any ticker fetch. Must contain at least 30 observations."
+        ),
+    )
+    portfolio_value: Annotated[float, Field(gt=0)] = 10_000.0
+    confidence_level: Annotated[float, Field(gt=0.5, lt=1.0)] = 0.95
+    horizon_days: Annotated[int, Field(ge=1, le=252)] = 1
+    monte_carlo_paths: Annotated[int, Field(ge=1_000, le=1_000_000)] = 100_000
+
+
+class VaRPayload(_BaseModel):
+    """Result from one VaR method."""
+
+    kind: Literal["var"] = "var"
+    var_loss: float = Field(description="Value at Risk as a positive loss in dollars")
+    cvar_loss: float = Field(description="Expected Shortfall as a positive loss in dollars")
+    mean_return: float
+    volatility: float
+    n_observations: int
+
+
+# Discriminated union over all calculator payload types.
+CalcResultPayload = Annotated[
+    OptionsPriceResult | VaRPayload, Field(discriminator="kind")
+]
 
 
 class CalculatorResult(_BaseModel):
@@ -122,7 +165,7 @@ class CalculatorResult(_BaseModel):
 
     calculator_id: str
     method_name: str
-    payload: OptionsPriceResult
+    payload: CalcResultPayload
     duration_ms: float
     succeeded: bool = True
     error: str | None = None
@@ -165,7 +208,7 @@ class FinalAnswer(_BaseModel):
     request_id: UUID
     family: CalcFamily
     verification_status: VerificationStatus
-    primary_result: OptionsPriceResult
+    primary_result: CalcResultPayload
     calculator_results: list[CalculatorResult]
     verification: VerificationResult
     explanation: str

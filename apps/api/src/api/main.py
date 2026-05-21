@@ -15,6 +15,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
 from src.api.routes import chat as chat_routes  # noqa: E402  (after load_dotenv)
 from src.api.routes import options as options_routes  # noqa: E402
+from src.api.routes import risk as risk_routes  # noqa: E402
 
 app = FastAPI(
     title="Trading Confidence Engine",
@@ -45,6 +46,7 @@ app.add_middleware(
 )
 
 app.include_router(options_routes.router, prefix="/calc/options", tags=["options"])
+app.include_router(risk_routes.router, prefix="/calc/risk", tags=["risk"])
 app.include_router(chat_routes.router, prefix="/chat", tags=["chat"])
 
 
