@@ -1,4 +1,4 @@
-import type { FinalAnswer } from "@/lib/types";
+import type { FinalAnswer, OptionsPriceResult } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { VerificationBadge } from "./VerificationBadge";
 
@@ -6,7 +6,20 @@ interface Props {
   answer: FinalAnswer;
 }
 
+function isOptionsResult(
+  p: FinalAnswer["primary_result"],
+): p is OptionsPriceResult {
+  return p.kind === "options_price";
+}
+
 export function ResultCard({ answer }: Props) {
+  if (!isOptionsResult(answer.primary_result)) {
+    return (
+      <div className="text-sm text-rose-700">
+        Unexpected payload — expected options pricing.
+      </div>
+    );
+  }
   const primary = answer.primary_result;
   const greeks = primary.greeks;
   const cross = answer.verification.cross_method;
@@ -90,7 +103,9 @@ export function ResultCard({ answer }: Props) {
                     : "font-mono font-semibold text-rose-700"
                 }
               >
-                {c.succeeded ? `$${c.payload.price.toFixed(4)}` : "FAILED"}
+                {c.succeeded && c.payload.kind === "options_price"
+                  ? `$${c.payload.price.toFixed(4)}`
+                  : "FAILED"}
                 <span className="ml-2 text-zinc-400">
                   {c.duration_ms.toFixed(1)}ms
                 </span>

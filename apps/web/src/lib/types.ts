@@ -28,14 +28,26 @@ export interface Greeks {
 }
 
 export interface OptionsPriceResult {
+  kind: "options_price";
   price: number;
   greeks: Greeks | null;
 }
 
+export interface VaRPayload {
+  kind: "var";
+  var_loss: number;
+  cvar_loss: number;
+  mean_return: number;
+  volatility: number;
+  n_observations: number;
+}
+
+export type CalcResultPayload = OptionsPriceResult | VaRPayload;
+
 export interface CalculatorResult {
   calculator_id: string;
   method_name: string;
-  payload: OptionsPriceResult;
+  payload: CalcResultPayload;
   duration_ms: number;
   succeeded: boolean;
   error: string | null;
@@ -70,12 +82,24 @@ export interface FinalAnswer {
   request_id: string;
   family: string;
   verification_status: VerificationStatus;
-  primary_result: OptionsPriceResult;
+  primary_result: CalcResultPayload;
   calculator_results: CalculatorResult[];
   verification: VerificationResult;
   explanation: string;
   limitations: string[];
   timestamp: string;
+}
+
+// ---- VaR request ----
+
+export interface VaRRequest {
+  ticker?: string | null;
+  lookback_days?: number;
+  returns?: number[] | null;
+  portfolio_value: number;
+  confidence_level: number;
+  horizon_days: number;
+  monte_carlo_paths?: number;
 }
 
 // ---- Chat / LLM-parsed types ----
