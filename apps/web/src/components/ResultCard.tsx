@@ -8,6 +8,7 @@ import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { PayoffChart } from "./PayoffChart";
 import { SaveButton } from "./SaveButton";
+import { ScenarioExplorer } from "./ScenarioExplorer";
 import { VerificationBadge } from "./VerificationBadge";
 import { WhyPartialExpander } from "./WhyPartialExpander";
 
@@ -85,6 +86,10 @@ export function ResultCard({ answer, request }: Props) {
             />
           </div>
         </div>
+      )}
+
+      {request && (
+        <ScenarioExplorer baseRequest={request} baseResult={primary} />
       )}
 
       {greeks && (
