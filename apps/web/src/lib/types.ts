@@ -51,7 +51,30 @@ export interface VaRPayload {
   cvar_return_quantile: number | null;
 }
 
-export type CalcResultPayload = OptionsPriceResult | VaRPayload;
+export type PortfolioObjective = "mean_variance" | "max_sharpe";
+
+export interface AssetWeight {
+  ticker: string;
+  weight: number;
+  risk_contribution: number;
+}
+
+export interface PortfolioPayload {
+  kind: "portfolio";
+  objective: PortfolioObjective;
+  weights: AssetWeight[];
+  expected_return_annualised: number;
+  volatility_annualised: number;
+  sharpe_ratio: number;
+  solver_name: string;
+  iterations: number | null;
+  instability_score: number | null;
+}
+
+export type CalcResultPayload =
+  | OptionsPriceResult
+  | VaRPayload
+  | PortfolioPayload;
 
 export interface CalculatorResult {
   calculator_id: string;
@@ -109,6 +132,16 @@ export interface VaRRequest {
   confidence_level: number;
   horizon_days: number;
   monte_carlo_paths?: number;
+}
+
+// ---- Portfolio request ----
+
+export interface PortfolioRequest {
+  tickers: string[];
+  lookback_days?: number;
+  risk_free_rate?: number;
+  objective?: PortfolioObjective;
+  risk_aversion?: number;
 }
 
 // ---- Chat / LLM-parsed types ----

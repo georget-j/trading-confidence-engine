@@ -2,6 +2,7 @@ import type {
   ChatParseResponse,
   FinalAnswer,
   OptionsPricingRequest,
+  PortfolioRequest,
   VaRRequest,
 } from "./types";
 
@@ -32,4 +33,10 @@ export function parseChat(text: string): Promise<ChatParseResponse> {
 
 export function computeVaR(payload: VaRRequest): Promise<FinalAnswer> {
   return postJson<FinalAnswer>("/calc/risk/var", payload);
+}
+
+export function optimizePortfolio(
+  payload: PortfolioRequest,
+): Promise<FinalAnswer> {
+  return postJson<FinalAnswer>("/calc/portfolio/optimize", payload);
 }

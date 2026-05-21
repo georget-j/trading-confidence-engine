@@ -4,6 +4,8 @@ import { useState } from "react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { FirstRunTour } from "@/components/FirstRunTour";
 import { Glossary } from "@/components/Glossary";
+import { PortfolioForm } from "@/components/PortfolioForm";
+import { PortfolioResultCard } from "@/components/PortfolioResultCard";
 import {
   DEFAULT_FORM_STATE,
   formStateFromRequest,
@@ -13,14 +15,15 @@ import {
 import { ResultCard } from "@/components/ResultCard";
 import { RiskForm } from "@/components/RiskForm";
 import { RiskResultCard } from "@/components/RiskResultCard";
-import { computeVaR, priceOption } from "@/lib/api";
+import { computeVaR, optimizePortfolio, priceOption } from "@/lib/api";
 import type {
   FinalAnswer,
   OptionsPricingRequest,
+  PortfolioRequest,
   VaRRequest,
 } from "@/lib/types";
 
-type Tab = "options" | "risk";
+type Tab = "options" | "risk" | "portfolio";
 
 export default function Home() {
   const [tab, setTab] = useState<Tab>("options");
@@ -39,6 +42,12 @@ export default function Home() {
   const [riskRequest, setRiskRequest] = useState<VaRRequest | null>(null);
   const [riskLoading, setRiskLoading] = useState(false);
   const [riskError, setRiskError] = useState<string | null>(null);
+
+  const [portfolioAnswer, setPortfolioAnswer] = useState<FinalAnswer | null>(
+    null,
+  );
+  const [portfolioLoading, setPortfolioLoading] = useState(false);
+  const [portfolioError, setPortfolioError] = useState<string | null>(null);
 
   // Tour can be re-opened from the header "Help" link even after it's been
   // dismissed (localStorage flag stays set; we just re-render with a new key).
@@ -82,6 +91,20 @@ export default function Home() {
     }
   }
 
+  async function handleOptimizePortfolio(req: PortfolioRequest) {
+    setPortfolioError(null);
+    setPortfolioLoading(true);
+    try {
+      const result = await optimizePortfolio(req);
+      setPortfolioAnswer(result);
+    } catch (e) {
+      setPortfolioError(e instanceof Error ? e.message : String(e));
+      setPortfolioAnswer(null);
+    } finally {
+      setPortfolioLoading(false);
+    }
+  }
+
   return (
     <main className="min-h-dvh bg-zinc-50">
       <div className="mx-auto max-w-7xl px-6 py-12">
@@ -119,6 +142,12 @@ export default function Home() {
           </TabButton>
           <TabButton active={tab === "risk"} onClick={() => setTab("risk")}>
             Value at Risk
+          </TabButton>
+          <TabButton
+            active={tab === "portfolio"}
+            onClick={() => setTab("portfolio")}
+          >
+            Portfolio
           </TabButton>
         </div>
 
@@ -180,6 +209,31 @@ export default function Home() {
                   answer={riskAnswer}
                   request={riskRequest ?? undefined}
                 />
+              )}
+            </ResultSection>
+          </div>
+        )}
+
+        {tab === "portfolio" && (
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.5fr]">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                Portfolio optimisation
+              </h2>
+              <PortfolioForm
+                onSubmit={handleOptimizePortfolio}
+                loading={portfolioLoading}
+              />
+            </section>
+
+            <ResultSection
+              loading={portfolioLoading}
+              error={portfolioError}
+              empty="Pick a basket of tickers and optimise."
+              emptyDetail="Convex QP gives the optimal weights. Verification checks KKT conditions, cross-solver agreement, and how much the weights move under small input perturbations — a fragile optimum is honest about being one."
+            >
+              {portfolioAnswer && (
+                <PortfolioResultCard answer={portfolioAnswer} />
               )}
             </ResultSection>
           </div>

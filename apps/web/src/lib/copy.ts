@@ -45,6 +45,48 @@ export const OPTIONS_INPUTS: Record<string, FieldCopy> = {
   },
 };
 
+export const PORTFOLIO_INPUTS: Record<string, FieldCopy> = {
+  tickers: {
+    label: "Tickers",
+    info: "Comma-separated stock or ETF symbols (2 to 20). The optimiser allocates weights across all of them.",
+  },
+  lookback: {
+    label: "Lookback",
+    info: "How much price history to use, in trading days. 504 ≈ 2 years. Longer histories smooth the covariance estimate but slow your response to a regime shift.",
+  },
+  riskFree: {
+    label: "Risk-free rate",
+    info: "Annual interest rate you could earn risk-free (e.g. T-bill yield). Used to compute the Sharpe ratio and the max-Sharpe objective.",
+  },
+  objective: {
+    label: "Objective",
+    info: "Mean-variance maximises return minus a γ·risk penalty (you control γ). Max-Sharpe finds the tangent portfolio with the highest reward-per-unit-risk ratio.",
+  },
+  riskAversion: {
+    label: "Risk aversion γ",
+    info: "Mean-variance only. Higher γ → more weight on reducing variance → more diversified portfolio. Typical retail values: 2–5.",
+  },
+};
+
+export const PORTFOLIO_OUTPUTS = {
+  weight: {
+    label: "Weight",
+    info: "Fraction of the portfolio allocated to this asset. Weights are non-negative (long-only) and sum to 100%.",
+  },
+  riskContribution: {
+    label: "Risk contribution",
+    info: "Share of total portfolio variance attributable to this asset. A 30% weight that contributes 60% of risk is a concentration warning — the asset's volatility/correlation dominates the portfolio.",
+  },
+  sharpe: {
+    label: "Sharpe ratio",
+    info: "Excess return per unit of volatility. (E[r] − rf) / σ. Higher is better. 1.0 is good, 2.0 is exceptional, anything from in-sample optimisation should be treated as an upper bound.",
+  },
+  instability: {
+    label: "Solution stability",
+    info: "How much the optimal weights move under a small (±1%) perturbation of expected returns. 100% = perfectly stable. Anything below 75% means the weights are noise-driven and you should diversify the inputs rather than trust the exact allocation.",
+  },
+};
+
 export const RISK_INPUTS: Record<string, FieldCopy> = {
   ticker: {
     label: "Ticker",
