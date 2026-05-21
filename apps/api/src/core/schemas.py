@@ -174,9 +174,59 @@ class VaRPayload(_BaseModel):
     )
 
 
+# ---- Portfolio optimization -------------------------------------------------
+
+
+class PortfolioObjective(StrEnum):
+    MEAN_VARIANCE = "mean_variance"
+    MAX_SHARPE = "max_sharpe"
+
+
+class PortfolioRequest(_BaseModel):
+    """Inputs for a long-only portfolio optimization.
+
+    Returns are fetched from the configured data provider for each ticker;
+    the in-sample mean and covariance are estimated from those returns.
+    """
+
+    tickers: list[str] = Field(min_length=2, max_length=20)
+    lookback_days: Annotated[int, Field(ge=60, le=2520)] = 504
+    risk_free_rate: Annotated[float, Field(ge=-0.05, le=0.25)] = 0.04
+    objective: PortfolioObjective = PortfolioObjective.MEAN_VARIANCE
+    risk_aversion: Annotated[float, Field(gt=0, le=100)] = 2.0
+
+
+class AssetWeight(_BaseModel):
+    ticker: str
+    weight: float
+    risk_contribution: float = Field(
+        description=(
+            "Share of total portfolio variance attributable to this asset. "
+            "Sums to 1 across the portfolio."
+        ),
+    )
+
+
+class PortfolioPayload(_BaseModel):
+    kind: Literal["portfolio"] = "portfolio"
+    objective: PortfolioObjective
+    weights: list[AssetWeight]
+    expected_return_annualised: float
+    volatility_annualised: float
+    sharpe_ratio: float
+    solver_name: str
+    iterations: int | None = None
+    # Sensitivity: how much weights move under small input perturbations.
+    # 0 = perfectly stable, 1 = catastrophically unstable.
+    instability_score: float | None = Field(
+        None, ge=0, le=1, description="Fraction of weights that shifted >1% under perturbed inputs."
+    )
+
+
 # Discriminated union over all calculator payload types.
 CalcResultPayload = Annotated[
-    OptionsPriceResult | VaRPayload, Field(discriminator="kind")
+    OptionsPriceResult | VaRPayload | PortfolioPayload,
+    Field(discriminator="kind"),
 ]
 
 
