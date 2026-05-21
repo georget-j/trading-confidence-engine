@@ -3,6 +3,7 @@ import type { FinalAnswer, VaRPayload, VaRRequest } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { MethodComparisonBars } from "./MethodComparisonBars";
+import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
 import { VaRHistogram } from "./VaRHistogram";
 import { VerificationBadge } from "./VerificationBadge";
@@ -78,6 +79,20 @@ export function RiskResultCard({ answer, request }: Props) {
       />
 
       <ConfidenceBreakdown verification={answer.verification} />
+
+      {request?.ticker && (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            {request.ticker} recent price
+          </div>
+          <div className="mt-2">
+            <PriceChart
+              ticker={request.ticker}
+              days={Math.min(request.lookback_days ?? 60, 252)}
+            />
+          </div>
+        </div>
+      )}
 
       {primary.histogram_bins &&
         primary.var_return_quantile !== null &&

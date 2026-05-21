@@ -18,6 +18,7 @@ from src.api.routes import chat as chat_routes  # noqa: E402
 from src.api.routes import methods as methods_routes  # noqa: E402
 from src.api.routes import options as options_routes  # noqa: E402
 from src.api.routes import portfolio as portfolio_routes  # noqa: E402
+from src.api.routes import prices as prices_routes  # noqa: E402
 from src.api.routes import risk as risk_routes  # noqa: E402
 
 app = FastAPI(
@@ -58,6 +59,7 @@ app.include_router(
 )
 app.include_router(chat_routes.router, prefix="/chat", tags=["chat"])
 app.include_router(methods_routes.router, prefix="/api/methods", tags=["methods"])
+app.include_router(prices_routes.router, prefix="/api/prices", tags=["prices"])
 
 
 @app.get("/health")

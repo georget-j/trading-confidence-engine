@@ -52,3 +52,25 @@ export async function listMethods(): Promise<MethodEntry[]> {
   if (!r.ok) throw new Error(`API ${r.status}: ${await r.text()}`);
   return (await r.json()) as MethodEntry[];
 }
+
+export interface PricePoint {
+  date: string;
+  close: number;
+}
+
+export interface PriceHistoryResponse {
+  ticker: string;
+  points: PricePoint[];
+  cached: boolean;
+}
+
+export async function fetchPriceHistory(
+  ticker: string,
+  days: number = 60,
+): Promise<PriceHistoryResponse> {
+  const r = await fetch(
+    `${API_BASE}/api/prices/history?ticker=${encodeURIComponent(ticker)}&days=${days}`,
+  );
+  if (!r.ok) throw new Error(`API ${r.status}: ${await r.text()}`);
+  return (await r.json()) as PriceHistoryResponse;
+}

@@ -5,6 +5,7 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { EquityCurveChart } from "./EquityCurveChart";
+import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
 import { WhyPartialExpander } from "./WhyPartialExpander";
@@ -101,6 +102,18 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
       />
 
       <ConfidenceBreakdown verification={answer.verification} />
+
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          {p.ticker} recent price
+        </div>
+        <div className="mt-2">
+          <PriceChart
+            ticker={p.ticker}
+            days={Math.min(request?.lookback_days ?? 60, 252)}
+          />
+        </div>
+      </div>
 
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">

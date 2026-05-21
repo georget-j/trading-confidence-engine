@@ -39,6 +39,12 @@ class MarketDataProvider(Protocol):
         """
         ...
 
+    def fetch_price_history(
+        self, ticker: str, lookback_days: int
+    ) -> list[tuple[str, float]]:
+        """Return a list of (iso_date, close_price) pairs, most-recent last."""
+        ...
+
 
 class YFinanceProvider:
     """yfinance-backed provider. Free, no API key required."""
@@ -164,6 +170,49 @@ class YFinanceProvider:
             returns = returns[-lookback_days:]
         # Shape (T, N) — rows are days, columns are tickers in `tickers` order.
         return list(tickers), returns.tolist()
+
+    def fetch_price_history(
+        self, ticker: str, lookback_days: int
+    ) -> list[tuple[str, float]]:
+        """Pull daily closes and return (iso_date, close) pairs."""
+        try:
+            import yfinance as yf
+        except ImportError as exc:
+            raise MarketDataError("yfinance is not installed") from exc
+
+        period_days = int(lookback_days * 1.6) + 30
+        try:
+            data = yf.download(
+                ticker,
+                period=f"{period_days}d",
+                interval="1d",
+                auto_adjust=True,
+                progress=False,
+                threads=False,
+            )
+        except Exception as exc:
+            raise MarketDataError(
+                f"yfinance fetch failed for {ticker}: {exc}"
+            ) from exc
+
+        if data is None or data.empty:
+            raise MarketDataError(f"No data returned for ticker {ticker!r}")
+
+        close = data["Close"]
+        if hasattr(close, "iloc") and close.ndim > 1:
+            close = close.iloc[:, 0]
+        close = close.dropna()
+        if close.size < 2:
+            raise MarketDataError(
+                f"Only {close.size} prices returned for {ticker}"
+            )
+        pairs: list[tuple[str, float]] = []
+        for idx, val in close.items():
+            iso = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)
+            pairs.append((iso, float(val)))
+        if len(pairs) > lookback_days:
+            pairs = pairs[-lookback_days:]
+        return pairs
 
 
 _default = YFinanceProvider()
