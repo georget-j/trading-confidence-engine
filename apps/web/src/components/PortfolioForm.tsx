@@ -22,6 +22,8 @@ export function PortfolioForm({ onSubmit, loading }: Props) {
   const [objective, setObjective] =
     useState<PortfolioObjective>("mean_variance");
   const [riskAversion, setRiskAversion] = useState("2");
+  const [maxWeight, setMaxWeight] = useState("40");
+  const [shrinkCovariance, setShrinkCovariance] = useState(true);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +37,8 @@ export function PortfolioForm({ onSubmit, loading }: Props) {
       risk_free_rate: parseFloat(riskFree) / 100,
       objective,
       risk_aversion: parseFloat(riskAversion),
+      max_weight: parseFloat(maxWeight) / 100,
+      shrink_covariance: shrinkCovariance,
     });
   }
 
@@ -96,6 +100,13 @@ export function PortfolioForm({ onSubmit, loading }: Props) {
           onChange={setRiskFree}
           suffix="%"
         />
+        <NumField
+          label={PORTFOLIO_INPUTS.maxWeight.label}
+          info={PORTFOLIO_INPUTS.maxWeight.info}
+          value={maxWeight}
+          onChange={setMaxWeight}
+          suffix="%"
+        />
         {objective === "mean_variance" && (
           <NumField
             label={PORTFOLIO_INPUTS.riskAversion.label}
@@ -106,6 +117,19 @@ export function PortfolioForm({ onSubmit, loading }: Props) {
           />
         )}
       </div>
+
+      <label className="flex items-center gap-2 text-xs text-zinc-700">
+        <input
+          type="checkbox"
+          checked={shrinkCovariance}
+          onChange={(e) => setShrinkCovariance(e.target.checked)}
+          className="h-3.5 w-3.5 rounded border-zinc-300"
+        />
+        <span>{PORTFOLIO_INPUTS.shrinkCovariance.label}</span>
+        <span className="text-zinc-400">
+          (Ledoit-Wolf shrinkage — reduces over-fitting)
+        </span>
+      </label>
 
       <button
         type="submit"

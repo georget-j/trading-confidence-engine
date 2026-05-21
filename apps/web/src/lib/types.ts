@@ -142,6 +142,9 @@ export interface PortfolioRequest {
   risk_free_rate?: number;
   objective?: PortfolioObjective;
   risk_aversion?: number;
+  max_weight?: number;
+  min_weight?: number;
+  shrink_covariance?: boolean;
 }
 
 // ---- Chat / LLM-parsed types ----

@@ -48,12 +48,16 @@ def solve(
     perturbed inputs for sensitivity analysis without going through the
     CalculatorResult wrapper.
     """
-    mu, cov = returns_stats(returns_matrix)
+    mu, cov = returns_stats(returns_matrix, shrink_covariance=req.shrink_covariance)
     n = len(mu)
 
     w = cp.Variable(n, nonneg=True)
     objective = cp.Maximize(mu @ w - (req.risk_aversion / 2.0) * cp.quad_form(w, cov))
     constraints = [cp.sum(w) == 1.0]
+    if req.max_weight < 1.0:
+        constraints.append(w <= req.max_weight)
+    if req.min_weight > 0.0:
+        constraints.append(w >= req.min_weight)
     problem = cp.Problem(objective, constraints)
 
     chosen_solver = solver or cp.CLARABEL
@@ -82,7 +86,9 @@ def compute(
     started = time.perf_counter()
     try:
         weights, diag = solve(req, returns_matrix, solver=solver)
-        mu, cov = returns_stats(returns_matrix)
+        mu, cov = returns_stats(
+            returns_matrix, shrink_covariance=req.shrink_covariance
+        )
         rc = risk_contributions(weights, cov)
         port_ret = portfolio_return(weights, mu)
         port_vol = portfolio_volatility(weights, cov)

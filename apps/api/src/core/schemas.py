@@ -12,7 +12,7 @@ from enum import StrEnum
 from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CalcFamily(StrEnum):
@@ -187,6 +187,11 @@ class PortfolioRequest(_BaseModel):
 
     Returns are fetched from the configured data provider for each ticker;
     the in-sample mean and covariance are estimated from those returns.
+
+    Defaults bias the optimizer towards diversified, robust portfolios:
+    `max_weight=0.40` prevents 100%-in-one-asset over-fitting, and
+    `shrink_covariance=True` applies Ledoit-Wolf shrinkage which is widely
+    cited as the single most effective fix for mean-variance fragility.
     """
 
     tickers: list[str] = Field(min_length=2, max_length=20)
@@ -194,6 +199,43 @@ class PortfolioRequest(_BaseModel):
     risk_free_rate: Annotated[float, Field(ge=-0.05, le=0.25)] = 0.04
     objective: PortfolioObjective = PortfolioObjective.MEAN_VARIANCE
     risk_aversion: Annotated[float, Field(gt=0, le=100)] = 2.0
+    max_weight: Annotated[float, Field(gt=0, le=1.0)] = 0.40
+    min_weight: Annotated[float, Field(ge=0.0, le=1.0)] = 0.0
+    shrink_covariance: bool = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def _auto_relax_max_weight(cls, data: object) -> object:
+        """If the chosen max_weight is too tight to ever sum to 1, relax it
+        to the minimum feasible value. Keeps the small-portfolio UX clean —
+        a user with two tickers shouldn't need to know about the 1/n floor.
+        """
+        if not isinstance(data, dict):
+            return data
+        tickers = data.get("tickers")
+        if not isinstance(tickers, list) or len(tickers) < 2:
+            return data
+        max_w = data.get("max_weight", 0.40)
+        if not isinstance(max_w, int | float):
+            return data
+        needed = 1.0 / len(tickers)
+        if max_w < needed:
+            data["max_weight"] = min(1.0, needed + 1e-6)
+        return data
+
+    @model_validator(mode="after")
+    def _check_weight_bounds_feasible(self) -> PortfolioRequest:
+        n = len(self.tickers)
+        if self.min_weight * n > 1.0 + 1e-9:
+            raise ValueError(
+                f"min_weight={self.min_weight} too large for {n} tickers: "
+                f"forces sum > 1 (min possible sum = {self.min_weight * n:.2f})"
+            )
+        if self.min_weight >= self.max_weight:
+            raise ValueError(
+                f"min_weight ({self.min_weight}) must be < max_weight ({self.max_weight})"
+            )
+        return self
 
 
 class AssetWeight(_BaseModel):

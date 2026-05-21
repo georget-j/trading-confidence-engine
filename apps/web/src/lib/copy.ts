@@ -66,6 +66,14 @@ export const PORTFOLIO_INPUTS: Record<string, FieldCopy> = {
     label: "Risk aversion γ",
     info: "Mean-variance only. Higher γ → more weight on reducing variance → more diversified portfolio. Typical retail values: 2–5.",
   },
+  maxWeight: {
+    label: "Max per asset",
+    info: "Cap on any single position. 40% means no asset can exceed 40% of the portfolio. Without this constraint, mean-variance often concentrates 100% in the single best-performing in-sample asset — a textbook over-fitting failure.",
+  },
+  shrinkCovariance: {
+    label: "Robust covariance",
+    info: "Ledoit-Wolf shrinkage towards constant-correlation. Reduces over-fitting to the noisy sample covariance. Recommended on; disable only if you understand the trade-off.",
+  },
 };
 
 export const PORTFOLIO_OUTPUTS = {

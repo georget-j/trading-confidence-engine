@@ -46,18 +46,21 @@ def solve(
     *,
     solver: str | None = None,
 ) -> tuple[npt.NDArray[np.float64], dict[str, float | int | str]]:
-    mu, cov = returns_stats(returns_matrix)
+    mu, cov = returns_stats(returns_matrix, shrink_covariance=req.shrink_covariance)
     excess = mu - req.risk_free_rate
     n = len(mu)
 
     # Edge case: if no asset has positive excess return, max-Sharpe is
     # undefined (the change-of-variables constraint is infeasible). Fall
-    # back to the minimum-variance portfolio.
+    # back to the minimum-variance portfolio (with the same constraints).
     if np.max(excess) <= 0:
         w = cp.Variable(n, nonneg=True)
-        problem = cp.Problem(
-            cp.Minimize(cp.quad_form(w, cov)), [cp.sum(w) == 1.0]
-        )
+        fb_constraints: list[object] = [cp.sum(w) == 1.0]
+        if req.max_weight < 1.0:
+            fb_constraints.append(w <= req.max_weight)
+        if req.min_weight > 0.0:
+            fb_constraints.append(w >= req.min_weight)
+        problem = cp.Problem(cp.Minimize(cp.quad_form(w, cov)), fb_constraints)
         chosen = solver or cp.CLARABEL
         problem.solve(solver=chosen)
         if w.value is None:
@@ -73,24 +76,32 @@ def solve(
             "fallback": "min_variance_no_positive_excess",
         }
 
+    # κ ≥ 0 captures the implicit scaling (w = y/κ). Under the change of
+    # variables, the box constraint w_i ≤ M becomes y_i ≤ M·κ.
     y = cp.Variable(n, nonneg=True)
-    problem = cp.Problem(
-        cp.Minimize(cp.quad_form(y, cov)),
-        [excess @ y == 1.0],
-    )
+    kappa = cp.Variable(nonneg=True)
+    y_constraints: list[object] = [
+        excess @ y == 1.0,
+        cp.sum(y) == kappa,
+    ]
+    if req.max_weight < 1.0:
+        y_constraints.append(y <= req.max_weight * kappa)
+    if req.min_weight > 0.0:
+        y_constraints.append(y >= req.min_weight * kappa)
+    problem = cp.Problem(cp.Minimize(cp.quad_form(y, cov)), y_constraints)
     chosen = solver or cp.CLARABEL
     problem.solve(solver=chosen)
 
-    if y.value is None:
+    if y.value is None or kappa.value is None:
         raise RuntimeError(
             f"Max-Sharpe solver returned no solution ({problem.status})"
         )
 
     y_val = np.asarray(y.value, dtype=np.float64)
-    kappa = y_val.sum()
-    if kappa <= 0:
+    kappa_val = float(kappa.value)
+    if kappa_val <= 0:
         raise RuntimeError("Max-Sharpe change-of-variables produced κ ≤ 0")
-    weights = y_val / kappa
+    weights = y_val / kappa_val
     return weights, {
         "solver": chosen,
         "status": str(problem.status),
@@ -109,7 +120,9 @@ def compute(
     started = time.perf_counter()
     try:
         weights, diag = solve(req, returns_matrix, solver=solver)
-        mu, cov = returns_stats(returns_matrix)
+        mu, cov = returns_stats(
+            returns_matrix, shrink_covariance=req.shrink_covariance
+        )
         rc = risk_contributions(weights, cov)
         port_ret = portfolio_return(weights, mu)
         port_vol = portfolio_volatility(weights, cov)
