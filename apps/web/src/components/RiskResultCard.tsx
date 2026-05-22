@@ -177,17 +177,62 @@ export function RiskResultCard({ answer, request }: Props) {
           Sample stats
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-          <Stat label="N observations" value={String(primary.n_observations)} />
           <Stat
-            label="Mean return"
+            label={OUTPUTS.nObservations.label}
+            info={OUTPUTS.nObservations.info}
+            value={String(primary.n_observations)}
+          />
+          <Stat
+            label={OUTPUTS.meanReturn.label}
+            info={OUTPUTS.meanReturn.info}
             value={`${(primary.mean_return * 100).toFixed(3)}%`}
           />
           <Stat
-            label="Volatility"
+            label={OUTPUTS.sampleVolatility.label}
+            info={OUTPUTS.sampleVolatility.info}
             value={`${(primary.volatility * 100).toFixed(2)}%`}
           />
         </div>
       </div>
+
+      {(primary.sortino_ratio !== null ||
+        primary.calmar_ratio !== null ||
+        primary.max_drawdown !== null) && (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Downside metrics
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+            <Stat
+              label={OUTPUTS.sortino.label}
+              info={OUTPUTS.sortino.info}
+              value={
+                primary.sortino_ratio !== null
+                  ? primary.sortino_ratio.toFixed(2)
+                  : "—"
+              }
+            />
+            <Stat
+              label={OUTPUTS.calmar.label}
+              info={OUTPUTS.calmar.info}
+              value={
+                primary.calmar_ratio !== null
+                  ? primary.calmar_ratio.toFixed(2)
+                  : "—"
+              }
+            />
+            <Stat
+              label={OUTPUTS.maxDrawdown.label}
+              info={OUTPUTS.maxDrawdown.info}
+              value={
+                primary.max_drawdown !== null
+                  ? `−${(primary.max_drawdown * 100).toFixed(1)}%`
+                  : "—"
+              }
+            />
+          </div>
+        </div>
+      )}
 
       {answer.limitations.length > 0 && (
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600">
@@ -203,10 +248,21 @@ export function RiskResultCard({ answer, request }: Props) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  info,
+}: {
+  label: string;
+  value: string;
+  info?: string;
+}) {
   return (
     <div className="rounded-md border border-zinc-200 px-2 py-1.5">
-      <div className="text-[10px] text-zinc-500">{label}</div>
+      <div className="flex items-center text-[10px] text-zinc-500">
+        <span>{label}</span>
+        {info && <InfoTooltip body={info} />}
+      </div>
       <div className="font-mono text-xs text-zinc-900">{value}</div>
     </div>
   );

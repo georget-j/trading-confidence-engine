@@ -13,6 +13,7 @@ interface Props {
 const OBJECTIVES: { value: PortfolioObjective; label: string }[] = [
   { value: "mean_variance", label: "Mean-variance" },
   { value: "max_sharpe", label: "Max-Sharpe" },
+  { value: "risk_parity", label: "Risk parity" },
 ];
 
 export function PortfolioForm({ onSubmit, loading }: Props) {

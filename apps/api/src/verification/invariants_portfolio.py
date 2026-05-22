@@ -63,6 +63,8 @@ def check_portfolio_invariants(
     checks.append(_risk_contributions_sum_to_one(payload))
     if payload.objective == PortfolioObjective.MEAN_VARIANCE:
         checks.append(_kkt_stationarity(req, weights, returns_matrix))
+    elif payload.objective == PortfolioObjective.RISK_PARITY:
+        checks.append(_erc_interior_equal(req, payload, weights))
     return checks
 
 
@@ -108,6 +110,52 @@ def _risk_contributions_sum_to_one(payload: PortfolioPayload) -> InvariantCheck:
         description="Per-asset risk contributions sum to 1",
         passed=passed,
         detail=None if passed else f"sum={total}",
+    )
+
+
+def _erc_interior_equal(
+    req: PortfolioRequest,
+    payload: PortfolioPayload,
+    weights: npt.NDArray[np.float64],
+) -> InvariantCheck:
+    """Risk-parity invariant: among assets NOT pinned to the max/min weight
+    bounds, every asset must contribute (approximately) equally to portfolio
+    variance.
+
+    The unconstrained ERC formulation has *exactly* equal risk contributions
+    at the optimum. With binding box constraints, only the interior assets
+    can attain that — pinned assets get whatever RC their forced weight
+    implies. So the check applies to interior assets only.
+    """
+    rcs = np.array(
+        [aw.risk_contribution for aw in payload.weights], dtype=np.float64
+    )
+    max_w = req.max_weight
+    min_w = req.min_weight
+    at_lower = weights <= max(min_w, 0.0) + 1e-6
+    at_upper = weights >= max_w - 1e-6
+    interior = ~at_lower & ~at_upper
+
+    if interior.sum() < 2:
+        # 0 or 1 interior weight — equality is trivial.
+        return InvariantCheck(
+            name="erc_equal_risk_contribution",
+            description="Risk contributions equal among unconstrained assets",
+            passed=True,
+            detail="Fewer than 2 interior weights — trivially satisfied",
+        )
+
+    rc_interior = rcs[interior]
+    spread = float(rc_interior.max() - rc_interior.min())
+    # 2% absolute spread is generous: CLARABEL converges to ~1e-6 on smooth
+    # problems, but Ledoit-Wolf shrinkage and finite-precision risk
+    # contributions add ~1e-3 of noise.
+    passed = spread <= 0.02
+    return InvariantCheck(
+        name="erc_equal_risk_contribution",
+        description="Risk contributions equal among unconstrained assets",
+        passed=passed,
+        detail=None if passed else f"interior RC spread: {spread:.4f}",
     )
 
 

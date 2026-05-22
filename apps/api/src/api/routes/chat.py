@@ -11,11 +11,24 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict
 
 from src.core.schemas import (
+    BacktestRequest,
     CalculationRequest,
     FinalAnswer,
     OptionsPricingRequest,
+    PortfolioRequest,
+    VaRRequest,
 )
-from src.llm.router import LLMOptionsParse, LLMUnavailable, parse_options_nl
+from src.llm.router import (
+    LLMBacktestParse,
+    LLMOptionsParse,
+    LLMPortfolioParse,
+    LLMUnavailable,
+    LLMVaRParse,
+    parse_backtest_nl,
+    parse_options_nl,
+    parse_portfolio_nl,
+    parse_var_nl,
+)
 from src.orchestration.pipeline import run_pipeline
 
 router = APIRouter()
@@ -87,3 +100,75 @@ def chat_price(req: ChatParseRequest) -> ChatPriceResponse:
     calc_request = CalculationRequest(raw_input=req.text)
     answer, _audit = run_pipeline(calc_request, parsed_payload=structured)
     return ChatPriceResponse(raw_parse=parse, answer=answer)
+
+
+# ---- VaR -------------------------------------------------------------------
+
+
+class ChatVaRParseResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    structured: VaRRequest | None
+    raw_parse: LLMVaRParse
+    ready_to_compute: bool
+
+
+@router.post("/parse/var", response_model=ChatVaRParseResponse)
+def chat_parse_var(req: ChatParseRequest) -> ChatVaRParseResponse:
+    """Convert NL into a structured VaRRequest."""
+    try:
+        structured, parse = parse_var_nl(req.text)
+    except LLMUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return ChatVaRParseResponse(
+        structured=structured,
+        raw_parse=parse,
+        ready_to_compute=structured is not None,
+    )
+
+
+# ---- Portfolio -------------------------------------------------------------
+
+
+class ChatPortfolioParseResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    structured: PortfolioRequest | None
+    raw_parse: LLMPortfolioParse
+    ready_to_optimise: bool
+
+
+@router.post("/parse/portfolio", response_model=ChatPortfolioParseResponse)
+def chat_parse_portfolio(req: ChatParseRequest) -> ChatPortfolioParseResponse:
+    """Convert NL into a structured PortfolioRequest."""
+    try:
+        structured, parse = parse_portfolio_nl(req.text)
+    except LLMUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return ChatPortfolioParseResponse(
+        structured=structured,
+        raw_parse=parse,
+        ready_to_optimise=structured is not None,
+    )
+
+
+# ---- Backtest --------------------------------------------------------------
+
+
+class ChatBacktestParseResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    structured: BacktestRequest | None
+    raw_parse: LLMBacktestParse
+    ready_to_run: bool
+
+
+@router.post("/parse/backtest", response_model=ChatBacktestParseResponse)
+def chat_parse_backtest(req: ChatParseRequest) -> ChatBacktestParseResponse:
+    """Convert NL into a structured BacktestRequest."""
+    try:
+        structured, parse = parse_backtest_nl(req.text)
+    except LLMUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return ChatBacktestParseResponse(
+        structured=structured,
+        raw_parse=parse,
+        ready_to_run=structured is not None,
+    )

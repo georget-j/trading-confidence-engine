@@ -1,4 +1,4 @@
-import { PORTFOLIO_OUTPUTS } from "@/lib/copy";
+import { PORTFOLIO_OBJECTIVE_LABEL, PORTFOLIO_OUTPUTS } from "@/lib/copy";
 import type {
   FinalAnswer,
   PortfolioPayload,
@@ -37,7 +37,7 @@ export function PortfolioResultCard({ answer, request }: Props) {
   const stability =
     primary.instability_score !== null ? 1 - primary.instability_score : null;
   const objLabel =
-    primary.objective === "mean_variance" ? "Mean-variance" : "Max-Sharpe";
+    PORTFOLIO_OBJECTIVE_LABEL[primary.objective] ?? primary.objective;
 
   return (
     <div className="space-y-6">
@@ -48,19 +48,28 @@ export function PortfolioResultCard({ answer, request }: Props) {
           </div>
           <div className="mt-1 flex items-baseline gap-3">
             <div>
-              <div className="text-[10px] text-zinc-500">Sharpe</div>
+              <div className="flex items-center text-[10px] text-zinc-500">
+                <span>Sharpe</span>
+                <InfoTooltip body={PORTFOLIO_OUTPUTS.sharpe.info} />
+              </div>
               <div className="font-mono text-2xl font-semibold text-zinc-900">
                 {primary.sharpe_ratio.toFixed(2)}
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-500">E[r]</div>
+              <div className="flex items-center text-[10px] text-zinc-500">
+                <span>E[r]</span>
+                <InfoTooltip body={PORTFOLIO_OUTPUTS.expectedReturn.info} />
+              </div>
               <div className="font-mono text-2xl font-semibold text-emerald-700">
                 {FMT_PCT(primary.expected_return_annualised)}
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-500">σ</div>
+              <div className="flex items-center text-[10px] text-zinc-500">
+                <span>σ</span>
+                <InfoTooltip body={PORTFOLIO_OUTPUTS.volatility.info} />
+              </div>
               <div className="font-mono text-2xl font-semibold text-zinc-900">
                 {FMT_PCT(primary.volatility_annualised)}
               </div>

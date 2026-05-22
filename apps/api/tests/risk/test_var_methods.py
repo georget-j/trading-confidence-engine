@@ -117,3 +117,50 @@ def test_nan_returns_rejected() -> None:
     req = VaRRequest(returns=bad, portfolio_value=10_000.0)
     results = run_var_calculators(req, bad)
     assert all(not r.succeeded for r in results)
+
+
+def test_historical_populates_downside_metrics(normal_returns: list[float]) -> None:
+    """Historical method populates Sortino/Calmar/MaxDD; other methods leave null."""
+    req = VaRRequest(returns=normal_returns, portfolio_value=10_000.0)
+    result = historical_compute(req, normal_returns)
+    assert result.succeeded
+    payload = result.payload
+    assert isinstance(payload, VaRPayload)
+    assert payload.sortino_ratio is not None
+    assert payload.calmar_ratio is not None
+    assert payload.max_drawdown is not None
+    # Sanity bounds on synthetic normal returns (slight positive drift).
+    assert payload.max_drawdown > 0
+    # Max DD on a 504-day random walk with positive drift is generally < 50%.
+    assert payload.max_drawdown < 0.5
+
+    # Other methods should not populate these fields.
+    parametric = parametric_compute(req, normal_returns)
+    assert parametric.succeeded
+    pp = parametric.payload
+    assert isinstance(pp, VaRPayload)
+    assert pp.sortino_ratio is None
+    assert pp.calmar_ratio is None
+    assert pp.max_drawdown is None
+
+
+def test_sortino_exceeds_sharpe_on_positive_skew() -> None:
+    """For an asymmetric series with large positive outliers, Sortino must
+    exceed Sharpe (downside dev < total dev)."""
+    rng = np.random.default_rng(7)
+    # Base normal returns + a few large positive spikes.
+    base = rng.normal(0.0008, 0.012, 504)
+    base[::50] += 0.05  # ~10 large positive jumps
+    returns = base.tolist()
+    req = VaRRequest(returns=returns, portfolio_value=10_000.0)
+    result = historical_compute(req, returns)
+    payload = result.payload
+    assert isinstance(payload, VaRPayload)
+    assert payload.sortino_ratio is not None
+    # Sharpe-equivalent from the same series (annualised mean / annualised stdev).
+    daily_mean = float(np.mean(base))
+    daily_std = float(np.std(base, ddof=1))
+    sharpe = (daily_mean * 252) / (daily_std * np.sqrt(252))
+    assert payload.sortino_ratio > sharpe, (
+        f"sortino {payload.sortino_ratio:.3f} should exceed sharpe {sharpe:.3f}"
+    )

@@ -12,31 +12,77 @@ import {
 } from "recharts";
 import type { OptionType } from "@/lib/types";
 
-interface Props {
-  spot: number;
+/** One leg of a (possibly multi-leg) options position. `quantity` is signed:
+ *  positive = long, negative = short. Premium is per-contract (positive). */
+export interface PayoffLeg {
   strike: number;
   premium: number;
   optionType: OptionType;
+  quantity: number;
 }
 
-/** Classic hockey-stick payoff diagram at expiry.
- *  P/L = max(0, S - K) - premium  (call)
- *  P/L = max(0, K - S) - premium  (put) */
-export function PayoffChart({ spot, strike, premium, optionType }: Props) {
-  const breakeven = optionType === "call" ? strike + premium : strike - premium;
+interface Props {
+  spot: number;
+  /** Single-leg props — used when `legs` is not supplied. Existing callers
+   *  pass these and get the classic hockey-stick payoff. */
+  strike?: number;
+  premium?: number;
+  optionType?: OptionType;
+  /** Optional list of legs for multi-leg strategies. When provided, overrides
+   *  the single-leg props and renders aggregate P/L at expiry. */
+  legs?: PayoffLeg[];
+}
 
-  // x-axis range — centred on spot, ±40% so both sides of breakeven are visible.
-  const xMin = Math.max(0, Math.min(spot, strike, breakeven) * 0.6);
-  const xMax = Math.max(spot, strike, breakeven) * 1.4;
+function legPnL(leg: PayoffLeg, s: number): number {
+  const intrinsic =
+    leg.optionType === "call"
+      ? Math.max(s - leg.strike, 0)
+      : Math.max(leg.strike - s, 0);
+  return leg.quantity * (intrinsic - leg.premium);
+}
+
+/** Payoff diagram at expiry. Single-leg mode produces the classic hockey
+ *  stick with breakeven label; multi-leg mode renders aggregate P/L (no
+ *  breakeven label — multi-leg payoffs can have multiple breakevens). */
+export function PayoffChart(props: Props) {
+  const { spot } = props;
+
+  // Resolve to a unified leg list. Single-leg callers (current behaviour) get
+  // bit-identical output to the previous implementation.
+  const legs: PayoffLeg[] = props.legs ?? [
+    {
+      strike: props.strike ?? spot,
+      premium: props.premium ?? 0,
+      optionType: props.optionType ?? "call",
+      quantity: 1,
+    },
+  ];
+  const isSingleLeg = !props.legs && legs.length === 1;
+  const singleLeg = isSingleLeg ? legs[0] : null;
+  const breakeven =
+    singleLeg !== null
+      ? singleLeg.optionType === "call"
+        ? singleLeg.strike + singleLeg.premium
+        : singleLeg.strike - singleLeg.premium
+      : null;
+
+  // x-axis range — centred on spot, ±40%, also widened to include every
+  // leg's strike and the (single-leg) breakeven so they're all visible.
+  const anchors: number[] = [spot, ...legs.map((l) => l.strike)];
+  if (breakeven !== null) anchors.push(breakeven);
+  const xMin = Math.max(0, Math.min(...anchors) * 0.6);
+  const xMax = Math.max(...anchors) * 1.4;
   const N = 80;
   const step = (xMax - xMin) / (N - 1);
   const data = Array.from({ length: N }, (_, i) => {
     const s = xMin + i * step;
-    const intrinsic =
-      optionType === "call" ? Math.max(s - strike, 0) : Math.max(strike - s, 0);
-    const pnl = intrinsic - premium;
+    const pnl = legs.reduce((acc, leg) => acc + legPnL(leg, s), 0);
     return { s, pnl, pnlPos: Math.max(pnl, 0), pnlNeg: Math.min(pnl, 0) };
   });
+
+  // Max loss for the caption — single-leg long is the premium paid; for
+  // multi-leg or single-leg short we fall back to the chart's lowest P/L.
+  const maxLoss = -Math.min(...data.map((d) => d.pnl));
 
   return (
     <div className="space-y-2">
@@ -112,32 +158,43 @@ export function PayoffChart({ spot, strike, premium, optionType }: Props) {
               fill: "#0ea5e9",
             }}
           />
-          <ReferenceLine
-            x={breakeven}
-            stroke="#7c3aed"
-            strokeDasharray="3 3"
-            label={{
-              value: `breakeven $${breakeven.toFixed(2)}`,
-              position: "insideTopRight",
-              fontSize: 10,
-              fill: "#7c3aed",
-            }}
-          />
+          {breakeven !== null && (
+            <ReferenceLine
+              x={breakeven}
+              stroke="#7c3aed"
+              strokeDasharray="3 3"
+              label={{
+                value: `breakeven $${breakeven.toFixed(2)}`,
+                position: "insideTopRight",
+                fontSize: 10,
+                fill: "#7c3aed",
+              }}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
       <p className="text-[11px] leading-snug text-zinc-600">
-        Profit/loss at expiry as a function of the underlying price. You profit{" "}
-        {optionType === "call" ? (
+        {singleLeg !== null && breakeven !== null ? (
           <>
-            <span className="font-semibold">above ${breakeven.toFixed(2)}</span>
+            Profit/loss at expiry as a function of the underlying price. You
+            profit{" "}
+            {singleLeg.optionType === "call" ? (
+              <span className="font-semibold">
+                above ${breakeven.toFixed(2)}
+              </span>
+            ) : (
+              <span className="font-semibold">
+                below ${breakeven.toFixed(2)}
+              </span>
+            )}
+            ; max loss is the premium paid (${singleLeg.premium.toFixed(2)}).
           </>
         ) : (
           <>
-            <span className="font-semibold">below ${breakeven.toFixed(2)}</span>
+            Aggregate profit/loss at expiry across {legs.length} legs. Max loss
+            in the plotted range is ${maxLoss.toFixed(2)}.
           </>
         )}
-        ; max loss is the premium paid ($
-        {premium.toFixed(2)}).
       </p>
     </div>
   );

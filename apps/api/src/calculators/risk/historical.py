@@ -37,6 +37,44 @@ def _build_histogram(returns: np.ndarray) -> list[HistogramBin]:
 CALCULATOR_ID = "historical_var"
 METHOD_NAME = "Historical (empirical quantile)"
 
+TRADING_DAYS = 252
+
+
+def _downside_metrics(
+    returns: np.ndarray,
+) -> tuple[float | None, float | None, float | None]:
+    """Compute (sortino_ratio, calmar_ratio, max_drawdown) from a daily-return
+    series. All annualised. Returns (None, None, None) on degenerate inputs."""
+    if returns.size < 30:
+        return None, None, None
+
+    mean_daily = float(returns.mean())
+    annualised_return = mean_daily * TRADING_DAYS
+
+    # Sortino: mean / downside deviation. Downside = returns below the mean
+    # (Sortino's original formulation). Using zero as the threshold is a
+    # common alternative but gives misleading values when most returns are
+    # positive on average; we stick with mean-relative downside.
+    downside = returns[returns < mean_daily] - mean_daily
+    if downside.size == 0:
+        return None, None, None
+    downside_dev_daily = float(np.sqrt(np.mean(downside**2)))
+    if downside_dev_daily <= 0:
+        return None, None, None
+    downside_dev_annual = downside_dev_daily * np.sqrt(TRADING_DAYS)
+    sortino = annualised_return / downside_dev_annual
+
+    # Calmar: annualised return / max drawdown of the cumulative-return series.
+    cumulative = np.cumprod(1.0 + returns)
+    running_max = np.maximum.accumulate(cumulative)
+    drawdowns = (running_max - cumulative) / running_max
+    max_dd = float(np.max(drawdowns)) if drawdowns.size else 0.0
+    if max_dd <= 1e-9:
+        # Monotonic uptrend over the window — Calmar undefined.
+        return float(sortino), None, 0.0
+    calmar = annualised_return / max_dd
+    return float(sortino), float(calmar), max_dd
+
 
 def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
     started = time.perf_counter()
@@ -58,6 +96,8 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
         var_loss = -daily_var_return * sqrt_t * req.portfolio_value
         cvar_loss = -daily_cvar_return * sqrt_t * req.portfolio_value
 
+        sortino, calmar, max_dd = _downside_metrics(arr)
+
         payload = VaRPayload(
             var_loss=max(var_loss, 0.0),
             cvar_loss=max(cvar_loss, 0.0),
@@ -67,6 +107,9 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
             histogram_bins=_build_histogram(arr),
             var_return_quantile=daily_var_return,
             cvar_return_quantile=daily_cvar_return,
+            sortino_ratio=sortino,
+            calmar_ratio=calmar,
+            max_drawdown=max_dd,
         )
         return CalculatorResult(
             calculator_id=CALCULATOR_ID,
@@ -83,6 +126,7 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
                 var_loss=float("nan"), cvar_loss=float("nan"),
                 mean_return=0.0, volatility=0.0, n_observations=0,
                 histogram_bins=None, var_return_quantile=None, cvar_return_quantile=None,
+                sortino_ratio=None, calmar_ratio=None, max_drawdown=None,
             ),
             duration_ms=(time.perf_counter() - started) * 1000.0,
             succeeded=False,

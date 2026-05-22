@@ -34,6 +34,7 @@ export function VaRHistogram({
   // Recharts wants one row per bar with the x-position as a number-like field.
   // We plot the mid-point of each bin on the x-axis so the bars line up with
   // their actual range.
+  const totalCount = bins.reduce((acc, b) => acc + b.count, 0);
   const data = bins.map((b) => {
     const mid = (b.bin_min + b.bin_max) / 2;
     const inTail = b.bin_max <= varReturn; // entire bin below VaR
@@ -41,6 +42,9 @@ export function VaRHistogram({
       mid,
       pct: mid * 100,
       count: b.count,
+      probability: totalCount > 0 ? b.count / totalCount : 0,
+      binMin: b.bin_min,
+      binMax: b.bin_max,
       inTail,
     };
   });
@@ -68,19 +72,41 @@ export function VaRHistogram({
           <Tooltip
             contentStyle={{
               fontSize: 11,
-              padding: "4px 8px",
+              padding: "6px 10px",
               borderRadius: 6,
               border: "1px solid #d4d4d8",
             }}
-            formatter={(value) => [
-              typeof value === "number" ? `${value} days` : String(value),
-              "count",
-            ]}
-            labelFormatter={(label) =>
-              typeof label === "number"
-                ? `${label.toFixed(2)}% daily return`
-                : String(label)
-            }
+            cursor={{ fill: "rgba(0,0,0,0.04)" }}
+            content={({ active, payload }) => {
+              if (
+                !active ||
+                !payload ||
+                payload.length === 0 ||
+                payload[0]?.payload === undefined
+              ) {
+                return null;
+              }
+              const row = payload[0].payload as (typeof data)[number];
+              return (
+                <div className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
+                  <div className="font-mono text-zinc-900">
+                    {(row.binMin * 100).toFixed(2)}% →{" "}
+                    {(row.binMax * 100).toFixed(2)}%
+                  </div>
+                  <div className="mt-0.5 text-zinc-600">
+                    <span className="font-semibold text-zinc-900">
+                      {row.count}
+                    </span>{" "}
+                    days · {(row.probability * 100).toFixed(1)}% of sample
+                  </div>
+                  {row.inTail && (
+                    <div className="mt-0.5 font-semibold text-rose-700">
+                      in tail (loss ≥ VaR)
+                    </div>
+                  )}
+                </div>
+              );
+            }}
           />
           <ReferenceLine
             x={varReturn * 100}

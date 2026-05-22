@@ -132,11 +132,11 @@ def _build_explanation(
 ) -> str:
     top = sorted(payload.weights, key=lambda w: -w.weight)[:3]
     top_str = ", ".join(f"{aw.ticker} {aw.weight * 100:.1f}%" for aw in top)
-    obj_label = (
-        "mean-variance"
-        if payload.objective.value == "mean_variance"
-        else "max-Sharpe"
-    )
+    obj_label = {
+        "mean_variance": "mean-variance",
+        "max_sharpe": "max-Sharpe",
+        "risk_parity": "risk-parity",
+    }.get(payload.objective.value, payload.objective.value)
     return (
         f"Optimal {obj_label} portfolio across {len(payload.weights)} assets. "
         f"Top weights: {top_str}. "

@@ -1,3 +1,4 @@
+import { BACKTEST_OUTPUTS, BACKTEST_STRATEGY_LABEL } from "@/lib/copy";
 import type {
   BacktestPayload,
   BacktestRequest,
@@ -5,6 +6,7 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { EquityCurveChart } from "./EquityCurveChart";
+import { InfoTooltip } from "./InfoTooltip";
 import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
@@ -25,11 +27,7 @@ function isBacktestPayload(
 const FMT_PCT = (v: number, digits: number = 2) =>
   `${(v * 100).toFixed(digits)}%`;
 
-const STRATEGY_LABEL: Record<string, string> = {
-  buy_and_hold: "Buy & hold",
-  ma_crossover: "Moving-average crossover",
-  momentum: "Momentum",
-};
+const STRATEGY_LABEL = BACKTEST_STRATEGY_LABEL;
 
 export function BacktestResultCard({ answer, initialCapital, request }: Props) {
   if (!isBacktestPayload(answer.primary_result)) {
@@ -53,7 +51,10 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
           </div>
           <div className="mt-1 flex items-baseline gap-4">
             <div>
-              <div className="text-[10px] text-zinc-500">Total return</div>
+              <div className="flex items-center text-[10px] text-zinc-500">
+                <span>Total return</span>
+                <InfoTooltip body={BACKTEST_OUTPUTS.totalReturn.info} />
+              </div>
               <div
                 className={`font-mono text-2xl font-semibold ${
                   m.total_return >= 0 ? "text-emerald-700" : "text-rose-700"
@@ -64,13 +65,19 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-500">Sharpe</div>
+              <div className="flex items-center text-[10px] text-zinc-500">
+                <span>Sharpe</span>
+                <InfoTooltip body={BACKTEST_OUTPUTS.sharpe.info} />
+              </div>
               <div className="font-mono text-2xl font-semibold text-zinc-900">
                 {m.sharpe_ratio.toFixed(2)}
               </div>
             </div>
             <div>
-              <div className="text-[10px] text-zinc-500">Max DD</div>
+              <div className="flex items-center text-[10px] text-zinc-500">
+                <span>Max DD</span>
+                <InfoTooltip body={BACKTEST_OUTPUTS.maxDrawdown.info} />
+              </div>
               <div className="font-mono text-2xl font-semibold text-rose-700">
                 −{FMT_PCT(m.max_drawdown)}
               </div>
@@ -167,8 +174,9 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
       )}
 
       <div>
-        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Slippage sensitivity
+        <div className="flex items-center text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <span>Slippage sensitivity</span>
+          <InfoTooltip body={BACKTEST_OUTPUTS.slippageBps.info} />
         </div>
         <div className="mt-2 rounded-lg border border-zinc-200 p-3 text-xs">
           <div className="grid grid-cols-5 gap-2">
@@ -219,11 +227,31 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
           Other stats
         </div>
         <div className="mt-2 grid grid-cols-4 gap-2 text-xs">
-          <Stat label="Ann. return" value={FMT_PCT(m.annualised_return)} />
-          <Stat label="Ann. vol" value={FMT_PCT(m.annualised_volatility)} />
-          <Stat label="Calmar" value={m.calmar_ratio.toFixed(2)} />
-          <Stat label="Trades" value={String(m.n_trades)} />
-          <Stat label="Win rate" value={FMT_PCT(m.win_rate, 1)} />
+          <Stat
+            label={BACKTEST_OUTPUTS.annualisedReturn.label}
+            info={BACKTEST_OUTPUTS.annualisedReturn.info}
+            value={FMT_PCT(m.annualised_return)}
+          />
+          <Stat
+            label={BACKTEST_OUTPUTS.annualisedVolatility.label}
+            info={BACKTEST_OUTPUTS.annualisedVolatility.info}
+            value={FMT_PCT(m.annualised_volatility)}
+          />
+          <Stat
+            label={BACKTEST_OUTPUTS.calmar.label}
+            info={BACKTEST_OUTPUTS.calmar.info}
+            value={m.calmar_ratio.toFixed(2)}
+          />
+          <Stat
+            label={BACKTEST_OUTPUTS.nTrades.label}
+            info={BACKTEST_OUTPUTS.nTrades.info}
+            value={String(m.n_trades)}
+          />
+          <Stat
+            label={BACKTEST_OUTPUTS.winRate.label}
+            info={BACKTEST_OUTPUTS.winRate.info}
+            value={FMT_PCT(m.win_rate, 1)}
+          />
         </div>
       </div>
 
@@ -305,10 +333,21 @@ function FlagBox({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  info,
+}: {
+  label: string;
+  value: string;
+  info?: string;
+}) {
   return (
     <div className="rounded-md border border-zinc-200 px-2 py-1.5">
-      <div className="text-[10px] text-zinc-500">{label}</div>
+      <div className="flex items-center text-[10px] text-zinc-500">
+        <span>{label}</span>
+        {info && <InfoTooltip body={info} />}
+      </div>
       <div className="font-mono text-xs text-zinc-900">{value}</div>
     </div>
   );

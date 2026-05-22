@@ -304,11 +304,12 @@ def main() -> int:
         ],
     }
 
-    # Persist to benchmarks/.
+    # Persist to a single canonical path so the repo stays clean. The report
+    # carries its own ISO timestamp so prior runs can be reconstructed from
+    # git history if needed.
     out_dir = _API_ROOT.parent.parent / "benchmarks"
     out_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    out_path = out_dir / f"calibration_{stamp}.json"
+    out_path = out_dir / "calibration_latest.json"
     out_path.write_text(json.dumps(report, indent=2))
 
     # Human-readable summary.

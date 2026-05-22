@@ -1,4 +1,4 @@
-import { GREEKS } from "@/lib/copy";
+import { GREEKS, OUTPUTS } from "@/lib/copy";
 import type {
   FinalAnswer,
   OptionsPriceResult,
@@ -6,6 +6,10 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
+import {
+  IntermediatePnLChart,
+  type IntermediateLeg,
+} from "./IntermediatePnLChart";
 import { PayoffChart } from "./PayoffChart";
 import { SaveButton } from "./SaveButton";
 import { ScenarioExplorer } from "./ScenarioExplorer";
@@ -39,8 +43,9 @@ export function ResultCard({ answer, request }: Props) {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
-            Result
+          <div className="flex items-center text-xs uppercase tracking-wide text-zinc-500">
+            <span>Option price</span>
+            <InfoTooltip body={OUTPUTS.optionPrice.info} />
           </div>
           <div className="mt-1 font-mono text-4xl font-semibold text-zinc-900">
             ${primary.price.toFixed(4)}
@@ -83,6 +88,32 @@ export function ResultCard({ answer, request }: Props) {
               strike={request.strike}
               premium={primary.price}
               optionType={request.option_type}
+            />
+          </div>
+        </div>
+      )}
+
+      {request && (
+        <div>
+          <div className="flex items-center text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <span>P/L over time</span>
+            <InfoTooltip body="P/L estimated at four points between today and expiry, holding vol/rate constant. The 'Now' curve is what would happen if spot moved this instant; the 'At expiry' curve is the hockey stick above. Long options decay along these curves as time passes." />
+          </div>
+          <div className="mt-2">
+            <IntermediatePnLChart
+              spot={request.spot}
+              riskFreeRate={request.risk_free_rate}
+              dividendYield={request.dividend_yield}
+              legs={[
+                {
+                  strike: request.strike,
+                  premium: primary.price,
+                  optionType: request.option_type,
+                  quantity: 1,
+                  time_to_expiry_years: request.time_to_expiry_years,
+                  volatility: request.volatility,
+                } satisfies IntermediateLeg,
+              ]}
             />
           </div>
         </div>

@@ -8,8 +8,10 @@ from src.core.schemas import (
     CalculationRequest,
     FinalAnswer,
     OptionsPricingRequest,
+    OptionsStrategyRequest,
 )
 from src.orchestration.pipeline import run_pipeline
+from src.orchestration.strategy_pipeline import run_strategy_pipeline
 
 router = APIRouter()
 
@@ -32,4 +34,25 @@ def price(payload: OptionsPricingRequest) -> FinalAnswer:
         raise HTTPException(
             status_code=500,
             detail=f"Calculation failed: {type(exc).__name__}",
+        ) from exc
+
+
+@router.post("/strategy", response_model=FinalAnswer)
+def strategy(payload: OptionsStrategyRequest) -> FinalAnswer:
+    """Price a multi-leg European options strategy.
+
+    Each leg is priced independently via BSM closed-form AND a QuantLib
+    binomial tree; verification requires **per-leg agreement** — the
+    `verification.cross_method.max_absolute_delta` reports the worst leg-level
+    disagreement, not the net-premium delta (which can hide drift when legs
+    have opposite signs).
+    """
+    try:
+        request = CalculationRequest(raw_input=payload.model_dump_json())
+        answer, _audit = run_strategy_pipeline(request, payload)
+        return answer
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=500,
+            detail=f"Strategy calculation failed: {type(exc).__name__}",
         ) from exc

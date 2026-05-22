@@ -54,12 +54,18 @@ def run_pipeline(
         parsed = parse_options_request(request)
     record(log, "parse", parsed.model_dump(mode="json"))
 
+    # The options pipeline only handles options payloads — narrow once.
+    options_payload = parsed.payload
+    assert isinstance(options_payload, OptionsPricingRequest), (
+        "options pipeline received non-options parsed payload"
+    )
+
     # ---- calculate -------------------------------------------------------
     # Lazy import to avoid loading numerical libs (QuantLib, etc.) when not
     # needed — keeps the import graph honest and tests fast.
     from src.calculators.options import run_options_calculators
 
-    calc_results = run_options_calculators(parsed.payload)
+    calc_results = run_options_calculators(options_payload)
     record(
         log,
         "calculate",
@@ -68,7 +74,7 @@ def run_pipeline(
 
     # ---- verify ----------------------------------------------------------
     cross = cross_check_methods(calc_results)
-    invariants = check_options_invariants(parsed.payload, calc_results)
+    invariants = check_options_invariants(options_payload, calc_results)
     verification = score_verification(
         cross_check=cross,
         invariants=invariants,
@@ -79,7 +85,7 @@ def run_pipeline(
 
     # ---- explain ---------------------------------------------------------
     primary = calc_results[0].payload
-    explanation = _build_explanation(parsed.payload, primary, verification.overall_status)
+    explanation = _build_explanation(options_payload, primary, verification.overall_status)
     record(log, "explain", {"text": explanation})
 
     # ---- respond ---------------------------------------------------------

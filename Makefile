@@ -1,4 +1,4 @@
-.PHONY: help install test lint typecheck ci api web
+.PHONY: help install test lint typecheck ci api web calibrate
 
 help:
 	@echo "make install     - install backend + frontend deps"
@@ -8,6 +8,7 @@ help:
 	@echo "make ci          - lint + typecheck + test"
 	@echo "make api         - run FastAPI dev server"
 	@echo "make web         - run Next.js dev server"
+	@echo "make calibrate   - regenerate benchmarks/calibration_latest.json"
 
 install:
 	cd apps/api && uv sync
@@ -29,3 +30,6 @@ api:
 
 web:
 	cd apps/web && pnpm dev
+
+calibrate:
+	cd apps/api && uv run python -m scripts.calibration_report

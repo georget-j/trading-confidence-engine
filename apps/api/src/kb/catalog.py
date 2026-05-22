@@ -232,7 +232,7 @@ METHOD_CATALOG: list[MethodEntry] = [
             "KKT stationarity (active/lower/upper-bound consistency)",
         ],
         cost=Cost.MODERATE,
-        independent_methods=["max_sharpe_qp"],
+        independent_methods=["max_sharpe_qp", "risk_parity_erc"],
     ),
     MethodEntry(
         calculator_id="max_sharpe_qp",
@@ -257,7 +257,39 @@ METHOD_CATALOG: list[MethodEntry] = [
         ],
         invariants_checked=["Same as mean-variance (KKT applies only to MV; for max-Sharpe see cross-solver agreement)"],
         cost=Cost.MODERATE,
-        independent_methods=["mean_variance_qp"],
+        independent_methods=["mean_variance_qp", "risk_parity_erc"],
+    ),
+    MethodEntry(
+        calculator_id="risk_parity_erc",
+        family=CalcFamily.PORTFOLIO_OPTIMIZATION,
+        method_name="Equal-risk-contribution (Spinu log-barrier)",
+        one_line=(
+            "Long-only portfolio where every asset contributes equally to "
+            "portfolio variance."
+        ),
+        long_description=(
+            "Solves min ½ xᵀΣx − Σ log(x_i) for x > 0, then normalises w = "
+            "x / Σx. Spinu (2013) proves this gives equal risk contributions "
+            "at the optimum. Box constraints (max_weight, min_weight) apply "
+            "to the normalised weights via the linear relation x_i ≤ "
+            "max_weight·Σx — preserves convexity. CLARABEL handles the log "
+            "term natively; ECOS does not."
+        ),
+        inputs_required=["tickers", "lookback", "max_weight"],
+        domain_of_validity=[
+            "Returns matrix with stable covariance over the lookback",
+            "Long-only (positive weights enforced by the log barrier)",
+        ],
+        domain_limits=[
+            "μ-invariant — does NOT trade off return for risk",
+            "Strongly affected by covariance noise on short lookbacks",
+        ],
+        invariants_checked=[
+            "Weights sum to 1, non-negative",
+            "Risk contributions equal among unconstrained (interior) assets",
+        ],
+        cost=Cost.MODERATE,
+        independent_methods=["mean_variance_qp", "max_sharpe_qp"],
     ),
     # ---- Backtest ----
     MethodEntry(

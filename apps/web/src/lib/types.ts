@@ -9,6 +9,9 @@ export type VerificationStatus =
   | "not_verified";
 
 export interface OptionsPricingRequest {
+  // `kind` mirrors the Pydantic discriminator; defaulted on the backend so
+  // clients can continue to omit it.
+  kind?: "options_request";
   spot: number;
   strike: number;
   time_to_expiry_years: number;
@@ -33,6 +36,42 @@ export interface OptionsPriceResult {
   greeks: Greeks | null;
 }
 
+// ---- Multi-leg strategy ----
+
+export interface StrategyLeg {
+  option_type: OptionType;
+  strike: number;
+  quantity: number; // signed: +N long, -N short
+  time_to_expiry_years: number;
+  volatility: number;
+}
+
+export interface OptionsStrategyRequest {
+  kind?: "options_strategy_request";
+  spot: number;
+  risk_free_rate: number;
+  dividend_yield?: number;
+  style?: OptionStyle;
+  legs: StrategyLeg[];
+}
+
+export interface StrategyLegResult {
+  option_type: OptionType;
+  strike: number;
+  quantity: number;
+  time_to_expiry_years: number;
+  volatility: number;
+  price: number;
+  greeks: Greeks | null;
+}
+
+export interface OptionsStrategyPayload {
+  kind: "options_strategy";
+  legs: StrategyLegResult[];
+  net_premium: number;
+  net_greeks: Greeks;
+}
+
 export interface HistogramBin {
   bin_min: number;
   bin_max: number;
@@ -49,9 +88,12 @@ export interface VaRPayload {
   histogram_bins: HistogramBin[] | null;
   var_return_quantile: number | null;
   cvar_return_quantile: number | null;
+  sortino_ratio: number | null;
+  calmar_ratio: number | null;
+  max_drawdown: number | null;
 }
 
-export type PortfolioObjective = "mean_variance" | "max_sharpe";
+export type PortfolioObjective = "mean_variance" | "max_sharpe" | "risk_parity";
 
 export interface AssetWeight {
   ticker: string;
@@ -110,6 +152,7 @@ export interface BacktestPayload {
 }
 
 export interface BacktestRequest {
+  kind?: "backtest_request";
   ticker: string;
   lookback_days?: number;
   strategy?: BacktestStrategy;
@@ -122,6 +165,7 @@ export interface BacktestRequest {
 
 export type CalcResultPayload =
   | OptionsPriceResult
+  | OptionsStrategyPayload
   | VaRPayload
   | PortfolioPayload
   | BacktestPayload;
@@ -175,6 +219,7 @@ export interface FinalAnswer {
 // ---- VaR request ----
 
 export interface VaRRequest {
+  kind?: "var_request";
   ticker?: string | null;
   lookback_days?: number;
   returns?: number[] | null;
@@ -205,6 +250,7 @@ export interface MethodEntry {
 // ---- Portfolio request ----
 
 export interface PortfolioRequest {
+  kind?: "portfolio_request";
   tickers: string[];
   lookback_days?: number;
   risk_free_rate?: number;
@@ -235,3 +281,57 @@ export interface ChatParseResponse {
   raw_parse: LLMOptionsParse;
   ready_to_price: boolean;
 }
+
+// ---- Per-family chat parses (M3) ----
+
+export interface LLMVaRParse {
+  ticker: string | null;
+  lookback_days: number | null;
+  portfolio_value: number | null;
+  confidence_level: number | null;
+  horizon_days: number | null;
+  parse_confidence: number;
+  parser_notes: string[];
+}
+
+export interface ChatVaRParseResponse {
+  structured: VaRRequest | null;
+  raw_parse: LLMVaRParse;
+  ready_to_compute: boolean;
+}
+
+export interface LLMPortfolioParse {
+  tickers: string[] | null;
+  lookback_days: number | null;
+  objective: PortfolioObjective | null;
+  risk_aversion: number | null;
+  max_weight: number | null;
+  parse_confidence: number;
+  parser_notes: string[];
+}
+
+export interface ChatPortfolioParseResponse {
+  structured: PortfolioRequest | null;
+  raw_parse: LLMPortfolioParse;
+  ready_to_optimise: boolean;
+}
+
+export interface LLMBacktestParse {
+  ticker: string | null;
+  lookback_days: number | null;
+  strategy: BacktestStrategy | null;
+  initial_capital: number | null;
+  slippage_bps: number | null;
+  parse_confidence: number;
+  parser_notes: string[];
+}
+
+export interface ChatBacktestParseResponse {
+  structured: BacktestRequest | null;
+  raw_parse: LLMBacktestParse;
+  ready_to_run: boolean;
+}
+
+/** Discriminated by `family` — what the user is currently working on.
+ *  Each family has its own LLM parser endpoint and request schema. */
+export type ChatFamily = "options" | "var" | "portfolio" | "backtest";

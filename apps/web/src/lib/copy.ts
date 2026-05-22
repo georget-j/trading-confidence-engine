@@ -45,6 +45,40 @@ export const OPTIONS_INPUTS: Record<string, FieldCopy> = {
   },
 };
 
+export const STRATEGY_INPUTS: Record<string, FieldCopy> = {
+  optionType: {
+    label: "Type",
+    info: "Call or put for this leg. Mix freely — e.g. an iron condor has two of each.",
+  },
+  strike: {
+    label: "Strike",
+    info: "The price the option lets you trade at. Per-leg, so vertical spreads (different strikes) and condors (four strikes) are first-class.",
+  },
+  quantity: {
+    label: "Qty",
+    info: "Signed number of contracts. Positive = long (you paid premium). Negative = short (you collected premium).",
+  },
+  days: {
+    label: "Days",
+    info: "Per-leg days to expiry. Same across legs for verticals/condors; different for calendar spreads.",
+  },
+  vol: {
+    label: "IV %",
+    info: "Per-leg implied vol. Same across legs unless you want to model a vol skew (e.g. higher IV on OTM puts).",
+  },
+};
+
+export const STRATEGY_OUTPUTS = {
+  netPremium: {
+    label: "Net premium",
+    info: "Sum of (quantity × leg price). Positive = net debit (you pay). Negative = net credit (you collect). Max loss for credit positions is the spread width minus the credit received.",
+  },
+  netGreeks: {
+    label: "Net Greeks",
+    info: "Quantity-weighted sum of each leg's Greeks. Tells you the strategy's overall sensitivity to spot, vol, and time — net delta near zero means the position is direction-neutral at the current spot.",
+  },
+};
+
 export const PORTFOLIO_INPUTS: Record<string, FieldCopy> = {
   tickers: {
     label: "Tickers",
@@ -60,7 +94,7 @@ export const PORTFOLIO_INPUTS: Record<string, FieldCopy> = {
   },
   objective: {
     label: "Objective",
-    info: "Mean-variance maximises return minus a γ·risk penalty (you control γ). Max-Sharpe finds the tangent portfolio with the highest reward-per-unit-risk ratio.",
+    info: "Mean-variance maximises return minus a γ·risk penalty (you control γ). Max-Sharpe finds the tangent portfolio with the highest reward-per-unit-risk ratio. Risk parity ignores expected returns entirely and weights so every asset contributes equally to portfolio variance — robust against mean-return estimation error.",
   },
   riskAversion: {
     label: "Risk aversion γ",
@@ -89,10 +123,81 @@ export const PORTFOLIO_OUTPUTS = {
     label: "Sharpe ratio",
     info: "Excess return per unit of volatility. (E[r] − rf) / σ. Higher is better. 1.0 is good, 2.0 is exceptional, anything from in-sample optimisation should be treated as an upper bound.",
   },
+  expectedReturn: {
+    label: "E[r]",
+    info: "Expected annualised return of the optimal portfolio under the lookback's sample mean. In-sample number — the realised return will almost certainly be different (usually lower).",
+  },
+  volatility: {
+    label: "σ",
+    info: "Annualised volatility of the optimal portfolio (standard deviation of returns). Lower σ for the same E[r] is what the optimiser is trying to achieve.",
+  },
   instability: {
     label: "Solution stability",
     info: "How much the optimal weights move under a small (±1%) perturbation of expected returns. 100% = perfectly stable. Anything below 75% means the weights are noise-driven and you should diversify the inputs rather than trust the exact allocation.",
   },
+};
+
+export const PORTFOLIO_OBJECTIVE_LABEL: Record<string, string> = {
+  mean_variance: "Mean-variance",
+  max_sharpe: "Max-Sharpe",
+  risk_parity: "Risk parity",
+};
+
+export const BACKTEST_OUTPUTS = {
+  totalReturn: {
+    label: "Total return",
+    info: "Cumulative return over the whole backtest window, after slippage. Compounded — a 24% total return on $10k means the account ended at $12,400.",
+  },
+  annualisedReturn: {
+    label: "Ann. return",
+    info: "Total return converted to a per-year rate. Lets you compare backtests of different lengths on a like-for-like basis.",
+  },
+  annualisedVolatility: {
+    label: "Ann. vol",
+    info: "Annualised standard deviation of daily returns. Equities typically run 12–25%; a strategy with lower vol than buy-and-hold is taking less risk.",
+  },
+  sharpe: {
+    label: "Sharpe",
+    info: "Excess return per unit of volatility. >1 is good, >2 is exceptional. In-sample numbers should be discounted — out-of-sample Sharpe is usually meaningfully lower.",
+  },
+  maxDrawdown: {
+    label: "Max DD",
+    info: "Worst peak-to-trough loss on the equity curve. Tells you the worst pain you would have sat through holding this strategy.",
+  },
+  calmar: {
+    label: "Calmar",
+    info: "Annualised return divided by max drawdown. High Calmar = small drawdown relative to returns. Sample-dependent — a backtest that never saw a big crash will overstate Calmar.",
+  },
+  winRate: {
+    label: "Win rate",
+    info: "Fraction of trades that closed profitably. A 30% win rate can still be highly profitable if winners are much larger than losers — don't read this in isolation.",
+  },
+  nTrades: {
+    label: "Trades",
+    info: "Number of round-trip trades the strategy made. More trades = more slippage cost and more statistical confidence; fewer trades = lower cost but less signal.",
+  },
+  walkForward: {
+    label: "Walk-forward reproducible",
+    info: "Running the exact same backtest twice produces bit-identical results. A hard requirement for trustworthy audit logs — if this fails, there's hidden randomness in the engine.",
+  },
+  lookahead: {
+    label: "No look-ahead bias",
+    info: "Positions don't peek at future returns. Look-ahead is the #1 way backtest results lie — the engine detects it by checking whether your positions correlate suspiciously with returns from days ahead.",
+  },
+  slippageBps: {
+    label: "Slippage (bps)",
+    info: "Per-trade trading-cost penalty in basis points (1 bp = 0.01%). 5 bps ≈ retail equity costs; 25 bps is what unfriendly fills cost you. Sweep this column to see how cost-sensitive the strategy is.",
+  },
+  alpha: {
+    label: "Alpha (return)",
+    info: "Extra return over passively holding the underlying (total return − buy-and-hold total return). Positive alpha means the active rules added value over doing nothing.",
+  },
+};
+
+export const BACKTEST_STRATEGY_LABEL: Record<string, string> = {
+  buy_and_hold: "Buy & hold",
+  ma_crossover: "Moving-average crossover",
+  momentum: "Momentum",
 };
 
 export const RISK_INPUTS: Record<string, FieldCopy> = {
@@ -153,6 +258,30 @@ export const OUTPUTS = {
   optionPrice: {
     label: "Option price",
     info: "Fair theoretical price under Black-Scholes-Merton, cross-checked by a binomial tree. Real market quotes will differ due to bid/ask spread, supply/demand, and dividend timing.",
+  },
+  sortino: {
+    label: "Sortino",
+    info: "Like Sharpe but only penalises downside moves — large positive returns don't count as 'risk.' Computed from the same returns sample. 1.0 is decent, 2.0+ is unusually clean. Always higher than Sharpe.",
+  },
+  calmar: {
+    label: "Calmar",
+    info: "Annualised return divided by the worst peak-to-trough drawdown in the sample. High Calmar = returns dwarf the worst loss seen. Beware: sample drawdowns understate true risk.",
+  },
+  maxDrawdown: {
+    label: "Max drawdown",
+    info: "Worst peak-to-trough decline in the cumulative return series over the lookback. A −18% max drawdown means at some point the underlying lost 18% from its high before recovering (or not).",
+  },
+  nObservations: {
+    label: "N observations",
+    info: "Number of daily returns used in the calculation. More observations smooth the estimate but react slower to a new regime. A 99% VaR estimate needs at least ~250 observations to even see ~2-3 'tail' days.",
+  },
+  meanReturn: {
+    label: "Mean return",
+    info: "Average daily return over the lookback sample. Usually tiny (a few basis points). Equity means are notoriously noisy — don't read too much into a single sample.",
+  },
+  sampleVolatility: {
+    label: "Volatility",
+    info: "Standard deviation of daily returns over the lookback sample. Annualised volatility ≈ daily × √252. Equities typically run 12–25% annualised.",
   },
 };
 

@@ -1,9 +1,13 @@
 import type {
   BacktestRequest,
+  ChatBacktestParseResponse,
   ChatParseResponse,
+  ChatPortfolioParseResponse,
+  ChatVaRParseResponse,
   FinalAnswer,
   MethodEntry,
   OptionsPricingRequest,
+  OptionsStrategyRequest,
   PortfolioRequest,
   VaRRequest,
 } from "./types";
@@ -29,8 +33,32 @@ export function priceOption(
   return postJson<FinalAnswer>("/calc/options/price", payload);
 }
 
+export function priceStrategy(
+  payload: OptionsStrategyRequest,
+): Promise<FinalAnswer> {
+  return postJson<FinalAnswer>("/calc/options/strategy", payload);
+}
+
 export function parseChat(text: string): Promise<ChatParseResponse> {
   return postJson<ChatParseResponse>("/chat/parse", { text });
+}
+
+export function parseChatVaR(text: string): Promise<ChatVaRParseResponse> {
+  return postJson<ChatVaRParseResponse>("/chat/parse/var", { text });
+}
+
+export function parseChatPortfolio(
+  text: string,
+): Promise<ChatPortfolioParseResponse> {
+  return postJson<ChatPortfolioParseResponse>("/chat/parse/portfolio", {
+    text,
+  });
+}
+
+export function parseChatBacktest(
+  text: string,
+): Promise<ChatBacktestParseResponse> {
+  return postJson<ChatBacktestParseResponse>("/chat/parse/backtest", { text });
 }
 
 export function computeVaR(payload: VaRRequest): Promise<FinalAnswer> {

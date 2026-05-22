@@ -62,6 +62,7 @@ class CalculationRequest(_BaseModel):
 class OptionsPricingRequest(_BaseModel):
     """Structured options-pricing request after parsing."""
 
+    kind: Literal["options_request"] = "options_request"
     spot: Annotated[float, Field(gt=0, description="Underlying spot price")]
     strike: Annotated[float, Field(gt=0, description="Strike price")]
     time_to_expiry_years: Annotated[
@@ -78,20 +79,6 @@ class OptionsPricingRequest(_BaseModel):
     ] = 0.0
     option_type: OptionType
     style: OptionStyle = OptionStyle.EUROPEAN
-
-
-# Discriminated union — extend with risk/portfolio/backtest payloads in later versions.
-ParsedPayload = Annotated[OptionsPricingRequest, Field(discriminator=None)]
-
-
-class ParsedRequest(_BaseModel):
-    """Output of the parser — structured, validated, family-aware."""
-
-    request_id: UUID
-    family: CalcFamily
-    payload: OptionsPricingRequest
-    parse_confidence: Annotated[float, Field(ge=0, le=1)] = 1.0
-    parser_notes: list[str] = Field(default_factory=list)
 
 
 # ---- Calculator outputs ----------------------------------------------------
@@ -115,6 +102,77 @@ class OptionsPriceResult(_BaseModel):
     greeks: GreeksPayload | None = None
 
 
+# ---- Multi-leg options strategies ------------------------------------------
+
+
+class StrategyLeg(_BaseModel):
+    """One leg of a multi-leg options strategy.
+
+    `quantity` is signed: +N = long N contracts, -N = short N contracts.
+    `time_to_expiry_years` and `volatility` are per-leg so calendars and
+    vertical spreads with mixed IV can be expressed.
+    """
+
+    option_type: OptionType
+    strike: Annotated[float, Field(gt=0)]
+    quantity: Annotated[int, Field(ge=-100, le=100)]
+    time_to_expiry_years: Annotated[float, Field(gt=0, le=10)]
+    volatility: Annotated[float, Field(gt=0, le=5.0)]
+
+    @model_validator(mode="after")
+    def _quantity_nonzero(self) -> StrategyLeg:
+        if self.quantity == 0:
+            raise ValueError("Leg quantity must be non-zero.")
+        return self
+
+
+class OptionsStrategyRequest(_BaseModel):
+    """Multi-leg European-style options strategy.
+
+    Underlying (spot, rate, dividend) is shared across legs. Strike, type,
+    quantity, expiry, and IV are per leg. Single-leg strategies should use
+    the existing `/calc/options/price` endpoint — `min_length=2` enforces
+    that here.
+    """
+
+    kind: Literal["options_strategy_request"] = "options_strategy_request"
+    spot: Annotated[float, Field(gt=0)]
+    risk_free_rate: Annotated[float, Field(ge=-0.1, le=1.0)]
+    dividend_yield: Annotated[float, Field(ge=0, le=1.0)] = 0.0
+    style: OptionStyle = OptionStyle.EUROPEAN
+    legs: list[StrategyLeg] = Field(min_length=2, max_length=4)
+
+
+class StrategyLegResult(_BaseModel):
+    """Priced leg — echoes the leg inputs plus the computed price and Greeks.
+
+    `price` is per-contract, positive. The sign of `quantity` determines whether
+    a leg contributes positively (long) or negatively (short) to net premium.
+    """
+
+    option_type: OptionType
+    strike: float
+    quantity: int
+    time_to_expiry_years: float
+    volatility: float
+    price: float
+    greeks: GreeksPayload | None = None
+
+
+class OptionsStrategyPayload(_BaseModel):
+    """Aggregate result of pricing a strategy.
+
+    `net_premium = sum(quantity * leg.price)` — positive for net debit
+    strategies (e.g. long call), negative for net credit (e.g. short put).
+    `net_greeks` is the quantity-weighted sum across all legs.
+    """
+
+    kind: Literal["options_strategy"] = "options_strategy"
+    legs: list[StrategyLegResult]
+    net_premium: float
+    net_greeks: GreeksPayload
+
+
 # ---- Risk / VaR --------------------------------------------------------------
 
 
@@ -126,6 +184,7 @@ class VaRRequest(_BaseModel):
     losing more than $230 over the stated horizon").
     """
 
+    kind: Literal["var_request"] = "var_request"
     ticker: str | None = Field(
         None, description="Equity ticker. If set, daily returns are fetched server-side."
     )
@@ -172,6 +231,30 @@ class VaRPayload(_BaseModel):
         None,
         description="Mean daily return in the tail beyond VaR. Used for chart shading.",
     )
+    # C2: downside-aware return/risk ratios derived from the same returns
+    # series. Populated by the historical method; other methods leave null.
+    sortino_ratio: float | None = Field(
+        None,
+        description=(
+            "Annualised excess return / downside deviation. Like Sharpe but "
+            "penalises only negative deviations from the mean."
+        ),
+    )
+    calmar_ratio: float | None = Field(
+        None,
+        description=(
+            "Annualised return / max drawdown of the cumulative return series. "
+            "High Calmar = returns dwarf the worst peak-to-trough loss."
+        ),
+    )
+    max_drawdown: float | None = Field(
+        None,
+        ge=0,
+        description=(
+            "Worst peak-to-trough decline of the implied cumulative-return "
+            "series, as a positive fraction (e.g. 0.18 = -18% drawdown)."
+        ),
+    )
 
 
 # ---- Portfolio optimization -------------------------------------------------
@@ -180,6 +263,7 @@ class VaRPayload(_BaseModel):
 class PortfolioObjective(StrEnum):
     MEAN_VARIANCE = "mean_variance"
     MAX_SHARPE = "max_sharpe"
+    RISK_PARITY = "risk_parity"
 
 
 class PortfolioRequest(_BaseModel):
@@ -194,6 +278,7 @@ class PortfolioRequest(_BaseModel):
     cited as the single most effective fix for mean-variance fragility.
     """
 
+    kind: Literal["portfolio_request"] = "portfolio_request"
     tickers: list[str] = Field(min_length=2, max_length=20)
     lookback_days: Annotated[int, Field(ge=60, le=2520)] = 504
     risk_free_rate: Annotated[float, Field(ge=-0.05, le=0.25)] = 0.04
@@ -277,6 +362,7 @@ class BacktestStrategy(StrEnum):
 class BacktestRequest(_BaseModel):
     """Inputs for a single-ticker backtest with sensitivity verification."""
 
+    kind: Literal["backtest_request"] = "backtest_request"
     ticker: str
     lookback_days: Annotated[int, Field(ge=120, le=2520)] = 504
     strategy: BacktestStrategy = BacktestStrategy.MA_CROSSOVER
@@ -337,9 +423,36 @@ class BacktestPayload(_BaseModel):
     )
 
 
+# Discriminated union over every parsed-request payload type. Each member
+# carries a `kind` Literal that disambiguates without callers needing to send
+# it (the default fills in when JSON omits the tag).
+ParsedPayload = Annotated[
+    OptionsPricingRequest
+    | OptionsStrategyRequest
+    | VaRRequest
+    | PortfolioRequest
+    | BacktestRequest,
+    Field(discriminator="kind"),
+]
+
+
+class ParsedRequest(_BaseModel):
+    """Output of the parser — structured, validated, family-aware."""
+
+    request_id: UUID
+    family: CalcFamily
+    payload: ParsedPayload
+    parse_confidence: Annotated[float, Field(ge=0, le=1)] = 1.0
+    parser_notes: list[str] = Field(default_factory=list)
+
+
 # Discriminated union over all calculator payload types.
 CalcResultPayload = Annotated[
-    OptionsPriceResult | VaRPayload | PortfolioPayload | BacktestPayload,
+    OptionsPriceResult
+    | OptionsStrategyPayload
+    | VaRPayload
+    | PortfolioPayload
+    | BacktestPayload,
     Field(discriminator="kind"),
 ]
 

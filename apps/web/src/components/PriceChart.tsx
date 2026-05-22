@@ -95,10 +95,15 @@ export function PriceChart({
   const last = state.points[state.points.length - 1]?.close ?? 0;
   const first = state.points[0]?.close ?? last;
   const pctChange = first > 0 ? (last - first) / first : 0;
-  const data = state.points.map((p) => ({
-    date: p.date,
-    close: p.close,
-  }));
+  const data = state.points.map((p, i) => {
+    const prev = i > 0 ? state.points[i - 1].close : p.close;
+    const dod = prev > 0 ? (p.close - prev) / prev : 0;
+    return {
+      date: p.date,
+      close: p.close,
+      dod, // day-over-day return as a decimal
+    };
+  });
 
   return (
     <div>
@@ -155,20 +160,37 @@ export function PriceChart({
             width={56}
           />
           <Tooltip
-            contentStyle={{
-              fontSize: 11,
-              padding: "4px 8px",
-              borderRadius: 6,
-              border: "1px solid #d4d4d8",
+            cursor={{ stroke: "#a1a1aa", strokeDasharray: "2 4" }}
+            content={({ active, payload, label }) => {
+              if (
+                !active ||
+                !payload ||
+                payload.length === 0 ||
+                payload[0]?.payload === undefined
+              ) {
+                return null;
+              }
+              const row = payload[0].payload as (typeof data)[number];
+              const up = row.dod >= 0;
+              return (
+                <div className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] shadow-sm">
+                  <div className="text-zinc-500">
+                    {typeof label === "string" ? label : ""}
+                  </div>
+                  <div className="font-mono font-semibold text-zinc-900">
+                    {FMT_USD.format(row.close)}
+                  </div>
+                  <div
+                    className={`font-mono ${
+                      up ? "text-emerald-700" : "text-rose-700"
+                    }`}
+                  >
+                    {up ? "+" : ""}
+                    {(row.dod * 100).toFixed(2)}% day-over-day
+                  </div>
+                </div>
+              );
             }}
-            labelFormatter={(label) =>
-              typeof label === "string" ? label : String(label)
-            }
-            formatter={(value) =>
-              typeof value === "number"
-                ? [FMT_USD.format(value), "Close"]
-                : null
-            }
           />
           <Area
             type="monotone"

@@ -118,6 +118,34 @@ const STEPS: Step[] = [
       </>
     ),
   },
+  {
+    title: "New here? Try the per-tab tutorials",
+    emoji: "🎓",
+    body: (
+      <>
+        <p>
+          Every tab has a{" "}
+          <span className="inline-block rounded bg-indigo-100 px-1.5 font-semibold text-indigo-900">
+            Learn this tab
+          </span>{" "}
+          panel at the top. It explains every term you&apos;ll see, then runs a
+          worked example with numbered callouts so you can read the result with
+          context.
+        </p>
+        <p className="mt-2">
+          Dismiss the panel on any tab with{" "}
+          <span className="font-mono text-zinc-900">Got it — hide</span> once
+          you&apos;re comfortable. You can always re-show every tutorial via the{" "}
+          <span className="font-semibold">Tutorials</span> toggle in the
+          top-right.
+        </p>
+        <p className="mt-2 text-zinc-600">
+          The tool is dense on purpose — these tutorials are how you get past
+          that first wall.
+        </p>
+      </>
+    ),
+  },
 ];
 
 export function FirstRunTour({ forceOpen, onClose }: Props) {

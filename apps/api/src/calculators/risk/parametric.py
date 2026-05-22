@@ -62,6 +62,9 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
             histogram_bins=None,
             var_return_quantile=None,
             cvar_return_quantile=None,
+            sortino_ratio=None,
+            calmar_ratio=None,
+            max_drawdown=None,
         )
         return CalculatorResult(
             calculator_id=CALCULATOR_ID,
@@ -78,6 +81,7 @@ def compute(req: VaRRequest, returns: list[float]) -> CalculatorResult:
                 var_loss=float("nan"), cvar_loss=float("nan"),
                 mean_return=0.0, volatility=0.0, n_observations=0,
                 histogram_bins=None, var_return_quantile=None, cvar_return_quantile=None,
+                sortino_ratio=None, calmar_ratio=None, max_drawdown=None,
             ),
             duration_ms=(time.perf_counter() - started) * 1000.0,
             succeeded=False,

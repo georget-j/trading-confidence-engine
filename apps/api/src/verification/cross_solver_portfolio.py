@@ -15,7 +15,7 @@ import cvxpy as cp
 import numpy as np
 import numpy.typing as npt
 
-from src.calculators.portfolio import max_sharpe, mean_variance
+from src.calculators.portfolio import max_sharpe, mean_variance, risk_parity
 from src.core.schemas import CrossMethodCheck, PortfolioObjective, PortfolioRequest
 
 # Larger than V1's options tolerance because SCS converges to ~1e-4 by default
@@ -39,8 +39,12 @@ def cross_check_solvers(
             second_weights, _ = mean_variance.solve(
                 req, returns_matrix, solver=cp.SCS
             )
-        else:
+        elif req.objective == PortfolioObjective.MAX_SHARPE:
             second_weights, _ = max_sharpe.solve(
+                req, returns_matrix, solver=cp.SCS
+            )
+        else:  # RISK_PARITY
+            second_weights, _ = risk_parity.solve(
                 req, returns_matrix, solver=cp.SCS
             )
     except Exception:  # noqa: BLE001
