@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Tests are not needed in the runtime image. Add back here if you decide to
+# run the suite as part of the container build.
+tests/
+
+# Local-only files that should never make it into the image.
+.env
+.env.*
+audit_logs/
+
+# OS / editor cruft
+.DS_Store
+.idea/
+.vscode/
+*.swp
