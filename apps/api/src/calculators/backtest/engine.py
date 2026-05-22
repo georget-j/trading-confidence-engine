@@ -18,7 +18,7 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
-from src.calculators.backtest import strategies
+from src.calculators.backtest import strategies, strategies_extra
 from src.core.schemas import BacktestRequest, BacktestStrategy
 
 
@@ -32,6 +32,14 @@ def positions_for(
         return strategies.ma_crossover(returns, req.ma_fast, req.ma_slow)
     if req.strategy == BacktestStrategy.MOMENTUM:
         return strategies.momentum(returns, req.momentum_lookback)
+    if req.strategy == BacktestStrategy.MEAN_REVERSION:
+        return strategies_extra.mean_reversion(
+            returns, req.mean_rev_lookback, req.mean_rev_entry_z
+        )
+    if req.strategy == BacktestStrategy.BOLLINGER:
+        return strategies_extra.bollinger(
+            returns, req.bollinger_lookback, req.bollinger_mult
+        )
     raise ValueError(f"Unknown strategy: {req.strategy}")
 
 

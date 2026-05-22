@@ -15,7 +15,12 @@ import cvxpy as cp
 import numpy as np
 import numpy.typing as npt
 
-from src.calculators.portfolio import max_sharpe, mean_variance, risk_parity
+from src.calculators.portfolio import (
+    max_sharpe,
+    mean_variance,
+    min_variance,
+    risk_parity,
+)
 from src.core.schemas import CrossMethodCheck, PortfolioObjective, PortfolioRequest
 
 # Larger than V1's options tolerance because SCS converges to ~1e-4 by default
@@ -43,10 +48,18 @@ def cross_check_solvers(
             second_weights, _ = max_sharpe.solve(
                 req, returns_matrix, solver=cp.SCS
             )
-        else:  # RISK_PARITY
+        elif req.objective == PortfolioObjective.RISK_PARITY:
             second_weights, _ = risk_parity.solve(
                 req, returns_matrix, solver=cp.SCS
             )
+        elif req.objective == PortfolioObjective.MIN_VARIANCE:
+            second_weights, _ = min_variance.solve(
+                req, returns_matrix, solver=cp.SCS
+            )
+        else:
+            # INVERSE_VOL is a closed-form heuristic — no solver to cross-check.
+            # Returning None tells the pipeline this is single-method.
+            return None
     except Exception:  # noqa: BLE001
         return None
 

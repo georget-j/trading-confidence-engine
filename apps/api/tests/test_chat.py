@@ -131,7 +131,8 @@ def test_chat_price_full_pipeline(monkeypatch: pytest.MonkeyPatch) -> None:
     data = r.json()
     assert data["answer"]["verification_status"] == "verified"
     assert data["answer"]["primary_result"]["price"] > 0
-    assert len(data["answer"]["calculator_results"]) == 2
+    # Four methods now: BSM closed-form, LR binomial, Monte Carlo, Crank-Nicolson PDE.
+    assert len(data["answer"]["calculator_results"]) == 4
 
 
 def test_chat_parse_503_when_no_key(monkeypatch: pytest.MonkeyPatch) -> None:

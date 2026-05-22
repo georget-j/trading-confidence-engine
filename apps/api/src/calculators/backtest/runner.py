@@ -29,6 +29,8 @@ def _method_name(strategy: BacktestStrategy) -> str:
         BacktestStrategy.BUY_AND_HOLD: "Buy-and-hold",
         BacktestStrategy.MA_CROSSOVER: "Moving-average crossover",
         BacktestStrategy.MOMENTUM: "Momentum (trailing return)",
+        BacktestStrategy.MEAN_REVERSION: "Mean reversion (z-score)",
+        BacktestStrategy.BOLLINGER: "Bollinger Bands",
     }[strategy]
 
 

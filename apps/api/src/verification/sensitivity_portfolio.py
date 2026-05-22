@@ -20,7 +20,13 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
-from src.calculators.portfolio import max_sharpe, mean_variance, risk_parity
+from src.calculators.portfolio import (
+    inverse_vol,
+    max_sharpe,
+    mean_variance,
+    min_variance,
+    risk_parity,
+)
 from src.core.schemas import PortfolioObjective, PortfolioRequest
 
 # 1% relative bumps on each μ_i, one at a time and one at a time downwards.
@@ -59,9 +65,16 @@ def compute_instability(
                     new_w, _ = mean_variance.solve(req, perturbed)
                 elif req.objective == PortfolioObjective.MAX_SHARPE:
                     new_w, _ = max_sharpe.solve(req, perturbed)
-                else:  # RISK_PARITY — μ-invariant, so this perturbation
-                    # primarily probes covariance noise sensitivity.
+                elif req.objective == PortfolioObjective.RISK_PARITY:
+                    # RISK_PARITY — μ-invariant; probes covariance noise sensitivity.
                     new_w, _ = risk_parity.solve(req, perturbed)
+                elif req.objective == PortfolioObjective.MIN_VARIANCE:
+                    # MIN_VARIANCE — also μ-invariant; same caveat as risk parity.
+                    new_w, _ = min_variance.solve(req, perturbed)
+                else:
+                    # INVERSE_VOL — μ-invariant; perturbing the mean does nothing,
+                    # so the sensitivity score will be ~0 by construction.
+                    new_w, _ = inverse_vol.solve(req, perturbed)
             except Exception:  # noqa: BLE001 — instability counts as movement
                 return 1.0, {"failed_at_asset": float(i), "direction": direction}
             move = float(np.max(np.abs(new_w - base_weights)))

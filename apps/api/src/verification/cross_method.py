@@ -17,18 +17,39 @@ from src.core.schemas import CalculatorResult, CrossMethodCheck, OptionsPriceRes
 DEFAULT_PRICE_ABS_TOL = 1e-3
 DEFAULT_PRICE_REL_TOL = 1e-3
 
+# Methods that participate in the HEADLINE cross-check (the one that
+# determines verified/partially_verified status). High-precision pair:
+# closed-form BSM and Leisen-Reimer binomial converge to 1e-4 on price.
+# Monte Carlo and Crank-Nicolson PDE sit at ~5e-3 relative — too loose to
+# gate the headline, but useful informational signals in the per-method
+# scorecard.
+HEADLINE_METHOD_IDS: frozenset[str] = frozenset({
+    "py_vollib_bsm_closed_form",
+    "quantlib_binomial_lr",
+})
+
 
 def cross_check_methods(
     results: list[CalculatorResult],
     *,
     abs_tol: float = DEFAULT_PRICE_ABS_TOL,
     rel_tol: float = DEFAULT_PRICE_REL_TOL,
+    include_ids: frozenset[str] | None = None,
 ) -> CrossMethodCheck | None:
-    """Return None if fewer than two successful calculators are available."""
+    """Return None if fewer than two successful calculators are available.
+
+    If `include_ids` is provided, only methods whose calculator_id is in the
+    set participate in the check. Used to keep the headline cross-check on
+    the high-precision pair (BSM closed-form + LR binomial) while letting
+    looser methods (Monte Carlo, Crank-Nicolson PDE) ride along in the
+    calculator results without gating the verdict.
+    """
     pairs: list[tuple[str, float]] = [
         (r.calculator_id, r.payload.price)
         for r in results
-        if r.succeeded and isinstance(r.payload, OptionsPriceResult)
+        if r.succeeded
+        and isinstance(r.payload, OptionsPriceResult)
+        and (include_ids is None or r.calculator_id in include_ids)
     ]
     if len(pairs) < 2:
         return None

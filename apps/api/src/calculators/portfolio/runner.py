@@ -5,7 +5,13 @@ from __future__ import annotations
 import numpy as np
 import numpy.typing as npt
 
-from src.calculators.portfolio import max_sharpe, mean_variance, risk_parity
+from src.calculators.portfolio import (
+    inverse_vol,
+    max_sharpe,
+    mean_variance,
+    min_variance,
+    risk_parity,
+)
 from src.core.schemas import (
     CalculatorResult,
     PortfolioObjective,
@@ -25,4 +31,8 @@ def optimize(
         return max_sharpe.compute(req, returns_matrix, solver=solver)
     if req.objective == PortfolioObjective.RISK_PARITY:
         return risk_parity.compute(req, returns_matrix, solver=solver)
+    if req.objective == PortfolioObjective.MIN_VARIANCE:
+        return min_variance.compute(req, returns_matrix, solver=solver)
+    if req.objective == PortfolioObjective.INVERSE_VOL:
+        return inverse_vol.compute(req, returns_matrix, solver=solver)
     raise ValueError(f"Unknown objective: {req.objective}")

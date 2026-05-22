@@ -264,6 +264,8 @@ class PortfolioObjective(StrEnum):
     MEAN_VARIANCE = "mean_variance"
     MAX_SHARPE = "max_sharpe"
     RISK_PARITY = "risk_parity"
+    MIN_VARIANCE = "min_variance"
+    INVERSE_VOL = "inverse_vol"
 
 
 class PortfolioRequest(_BaseModel):
@@ -357,6 +359,8 @@ class BacktestStrategy(StrEnum):
     BUY_AND_HOLD = "buy_and_hold"
     MA_CROSSOVER = "ma_crossover"
     MOMENTUM = "momentum"
+    MEAN_REVERSION = "mean_reversion"
+    BOLLINGER = "bollinger"
 
 
 class BacktestRequest(_BaseModel):
@@ -372,6 +376,12 @@ class BacktestRequest(_BaseModel):
     ma_fast: Annotated[int, Field(ge=2, le=200)] = 20
     ma_slow: Annotated[int, Field(ge=3, le=400)] = 50
     momentum_lookback: Annotated[int, Field(ge=5, le=252)] = 60
+    # Mean-reversion: long when z-score < -entry; flat when |z| < exit.
+    mean_rev_lookback: Annotated[int, Field(ge=5, le=252)] = 20
+    mean_rev_entry_z: Annotated[float, Field(gt=0, le=5)] = 1.5
+    # Bollinger: long when price crosses below (mean - mult·σ); exit at mean.
+    bollinger_lookback: Annotated[int, Field(ge=5, le=252)] = 20
+    bollinger_mult: Annotated[float, Field(gt=0, le=5)] = 2.0
 
 
 class EquityPoint(_BaseModel):

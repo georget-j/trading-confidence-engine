@@ -109,7 +109,8 @@ def test_api_var_endpoint_with_returns() -> None:
     assert data["verification_status"] == "verified"
     assert data["primary_result"]["var_loss"] > 0
     assert data["primary_result"]["cvar_loss"] >= data["primary_result"]["var_loss"]
-    assert len(data["calculator_results"]) == 3
+    # 5 methods now: historical, parametric, Monte Carlo, Cornish-Fisher, bootstrap.
+    assert len(data["calculator_results"]) == 5
 
 
 def test_api_var_requires_returns_or_ticker() -> None:

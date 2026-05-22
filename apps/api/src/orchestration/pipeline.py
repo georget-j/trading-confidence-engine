@@ -26,7 +26,7 @@ from src.core.schemas import (
 )
 from src.parser.options import parse_options_request
 from src.scoring.confidence import score_verification
-from src.verification.cross_method import cross_check_methods
+from src.verification.cross_method import HEADLINE_METHOD_IDS, cross_check_methods
 from src.verification.invariants import check_options_invariants
 
 
@@ -73,7 +73,11 @@ def run_pipeline(
     )
 
     # ---- verify ----------------------------------------------------------
-    cross = cross_check_methods(calc_results)
+    # Headline cross-check uses only the high-precision pair (BSM closed-form +
+    # binomial). Monte Carlo and Crank-Nicolson run and surface in the per-
+    # method scorecard but do not gate the verified/partially-verified status —
+    # their inherent precision is looser than the 1e-3 tolerance.
+    cross = cross_check_methods(calc_results, include_ids=HEADLINE_METHOD_IDS)
     invariants = check_options_invariants(options_payload, calc_results)
     verification = score_verification(
         cross_check=cross,

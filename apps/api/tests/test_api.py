@@ -31,7 +31,8 @@ def test_price_endpoint_verified_response() -> None:
     data = r.json()
     assert data["verification_status"] == "verified"
     assert data["primary_result"]["price"] > 0
-    assert len(data["calculator_results"]) == 2
+    # Four methods now: BSM closed-form, LR binomial, Monte Carlo, Crank-Nicolson PDE.
+    assert len(data["calculator_results"]) == 4
     assert all(c["succeeded"] for c in data["calculator_results"])
 
 
