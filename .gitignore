@@ -37,3 +37,14 @@ out/
 
 # Audit logs (generated)
 audit_logs/
+
+# Claude / agent planning artefacts — never commit to a public-facing repo
+# unless intentionally documented for users
+.claude/
+CLAUDE.md
+AGENT.md
+AGENTS.md
+.cursor/
+.cursorrules
+*.plan.md
+plans/
