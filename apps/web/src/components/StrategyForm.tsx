@@ -242,7 +242,7 @@ export function StrategyForm({ onSubmit, loading }: Props) {
       </div>
 
       {/* Shared underlying parameters */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <SmallField
           label={OPTIONS_INPUTS.spot.label}
           info={OPTIONS_INPUTS.spot.info}
@@ -342,7 +342,7 @@ function LegRow({
         )}
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         <div className="space-y-1">
           <div className="flex items-center text-[10px] text-zinc-600">
             <label>{STRATEGY_INPUTS.optionType.label}</label>

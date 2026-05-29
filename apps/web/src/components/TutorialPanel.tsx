@@ -45,8 +45,8 @@ export function TutorialPanel({ config }: Props) {
   }
 
   return (
-    <section className="mb-6 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm">
-      <header className="flex items-start justify-between gap-4">
+    <section className="mb-6 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm sm:p-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
@@ -56,14 +56,14 @@ export function TutorialPanel({ config }: Props) {
               {config.tabName}
             </h2>
           </div>
-          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-700">
+          <p className="mt-2 max-w-3xl text-xs leading-relaxed text-zinc-700 sm:text-sm">
             {config.whatItDoes}
           </p>
         </div>
         <button
           type="button"
           onClick={() => dismiss(config.tab)}
-          className="shrink-0 rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-100"
+          className="self-start rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-zinc-600 transition hover:bg-zinc-100 sm:shrink-0 sm:py-1"
           aria-label="Hide tutorial for this tab"
         >
           Got it — hide

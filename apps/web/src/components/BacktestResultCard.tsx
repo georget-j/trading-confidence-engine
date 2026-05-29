@@ -179,7 +179,7 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
           <InfoTooltip body={BACKTEST_OUTPUTS.slippageBps.info} />
         </div>
         <div className="mt-2 rounded-lg border border-zinc-200 p-3 text-xs">
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
             {p.slippage_sensitivity.bps.map((bp, i) => (
               <div key={bp} className="text-center">
                 <div className="text-[10px] text-zinc-500">{bp}bp</div>
@@ -226,7 +226,7 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Other stats
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-2 text-xs">
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 text-xs">
           <Stat
             label={BACKTEST_OUTPUTS.annualisedReturn.label}
             info={BACKTEST_OUTPUTS.annualisedReturn.info}

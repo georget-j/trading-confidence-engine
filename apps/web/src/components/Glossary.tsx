@@ -38,7 +38,7 @@ export function Glossary({ open, onOpenChange, trigger }: Props) {
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl bg-white p-6 shadow-xl">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-2xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-2xl bg-white p-4 shadow-xl sm:p-6">
           <div className="mb-3 flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="text-base font-semibold text-zinc-900">
@@ -49,7 +49,7 @@ export function Glossary({ open, onOpenChange, trigger }: Props) {
               </Dialog.Description>
             </div>
             <Dialog.Close
-              className="rounded-md p-1 text-zinc-500 transition hover:bg-zinc-100"
+              className="-mr-2 -mt-2 inline-flex h-11 w-11 items-center justify-center rounded-md text-2xl leading-none text-zinc-500 transition hover:bg-zinc-100"
               aria-label="Close glossary"
             >
               ×

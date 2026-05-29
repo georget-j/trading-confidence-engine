@@ -267,19 +267,19 @@ export default function Home() {
   return (
     <TutorialProvider>
       <main className="min-h-dvh bg-zinc-50">
-        <div className="mx-auto max-w-7xl px-6 py-12">
-          <header className="mb-8 flex items-start justify-between gap-6">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
+          <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-start md:justify-between md:gap-6">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
                 Trading Confidence Engine
               </h1>
-              <p className="mt-1 max-w-2xl text-sm text-zinc-600">
+              <p className="mt-1 max-w-2xl text-xs text-zinc-600 sm:text-sm">
                 Independent calculators cross-verified against domain
                 invariants. Every answer carries a verification status — the
                 engine refuses to confidently report what it can&apos;t verify.
               </p>
             </div>
-            <nav className="flex shrink-0 items-center gap-4 pt-2 text-xs">
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs md:shrink-0 md:pt-2">
               <SavedWorkflows onLoad={handleLoadWorkflow} />
               <Methods />
               <Glossary />
@@ -296,28 +296,32 @@ export default function Home() {
 
           <FirstRunTour key={tourReopenKey} forceOpen={tourReopenKey > 0} />
 
-          <div className="mb-6 inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
-            <TabButton
-              active={tab === "options"}
-              onClick={() => setTab("options")}
-            >
-              Options pricing
-            </TabButton>
-            <TabButton active={tab === "risk"} onClick={() => setTab("risk")}>
-              Value at Risk
-            </TabButton>
-            <TabButton
-              active={tab === "portfolio"}
-              onClick={() => setTab("portfolio")}
-            >
-              Portfolio
-            </TabButton>
-            <TabButton
-              active={tab === "backtest"}
-              onClick={() => setTab("backtest")}
-            >
-              Backtest
-            </TabButton>
+          {/* Tab bar: scrolls horizontally on narrow screens rather than wrapping
+              so the pill row stays visually a single unit. */}
+          <div className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
+            <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
+              <TabButton
+                active={tab === "options"}
+                onClick={() => setTab("options")}
+              >
+                Options pricing
+              </TabButton>
+              <TabButton active={tab === "risk"} onClick={() => setTab("risk")}>
+                Value at Risk
+              </TabButton>
+              <TabButton
+                active={tab === "portfolio"}
+                onClick={() => setTab("portfolio")}
+              >
+                Portfolio
+              </TabButton>
+              <TabButton
+                active={tab === "backtest"}
+                onClick={() => setTab("backtest")}
+              >
+                Backtest
+              </TabButton>
+            </div>
           </div>
 
           {tab === "options" && (
@@ -340,14 +344,14 @@ export default function Home() {
 
               {optionsMode === "single" ? (
                 <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.2fr]">
-                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                     <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                       Chat input
                     </h2>
                     <ChatPanel family="options" onParsed={handleChatParsed} />
                   </section>
 
-                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                     <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                       European option
                     </h2>
@@ -376,7 +380,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                     <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                       Multi-leg strategy
                     </h2>
@@ -408,7 +412,7 @@ export default function Home() {
             <>
               <TutorialPanel config={riskTutorial} />
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                   <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                     Chat input
                   </h2>
@@ -418,7 +422,7 @@ export default function Home() {
                   />
                 </section>
 
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                   <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                     VaR / CVaR
                   </h2>
@@ -446,7 +450,7 @@ export default function Home() {
             <>
               <TutorialPanel config={portfolioTutorial} />
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                   <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                     Chat input
                   </h2>
@@ -456,7 +460,7 @@ export default function Home() {
                   />
                 </section>
 
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                   <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                     Portfolio optimisation
                   </h2>
@@ -487,7 +491,7 @@ export default function Home() {
             <>
               <TutorialPanel config={backtestTutorial} />
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                   <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                     Chat input
                   </h2>
@@ -497,7 +501,7 @@ export default function Home() {
                   />
                 </section>
 
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                   <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                     Backtest
                   </h2>
@@ -593,7 +597,7 @@ function ResultSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
       {error && (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
           <div className="font-semibold">Request failed</div>

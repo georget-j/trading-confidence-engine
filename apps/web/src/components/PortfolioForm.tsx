@@ -86,7 +86,7 @@ export function PortfolioForm({ onSubmit, loading }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <NumField
           label={PORTFOLIO_INPUTS.lookback.label}
           info={PORTFOLIO_INPUTS.lookback.info}

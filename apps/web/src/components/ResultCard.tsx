@@ -128,7 +128,7 @@ export function ResultCard({ answer, request }: Props) {
           <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
             Greeks
           </div>
-          <div className="mt-2 grid grid-cols-5 gap-2">
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
             <Stat
               label={GREEKS.delta.label}
               info={GREEKS.delta.info}

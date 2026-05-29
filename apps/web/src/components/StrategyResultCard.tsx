@@ -221,7 +221,7 @@ export function StrategyResultCard({ answer, request }: Props) {
           <span>Net Greeks</span>
           <InfoTooltip body={STRATEGY_OUTPUTS.netGreeks.info} />
         </div>
-        <div className="mt-2 grid grid-cols-5 gap-2">
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
           <Stat
             label={GREEKS.delta.label}
             info={GREEKS.delta.info}
