@@ -53,3 +53,37 @@ export function TraceableMethodScorecard({ answer, valueFormatter }: Props) {
     </>
   );
 }
+
+/**
+ * Simple-mode counterpart: just the "Show me how this was verified" link
+ * + drawer. Used by result cards when full scorecard is hidden but the
+ * trace surface should still be reachable in one click.
+ */
+export function SimpleVerificationLink({ answer }: { answer: FinalAnswer }) {
+  const [open, setOpen] = useState(false);
+  const methodCount = answer.verification.per_method_status.filter(
+    (r) => r.ran,
+  ).length;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 underline-offset-2 hover:underline"
+      >
+        🔎 Show me how this was verified
+        {methodCount > 0 && (
+          <span className="text-zinc-500">
+            ({methodCount} method{methodCount === 1 ? "" : "s"})
+          </span>
+        )}
+      </button>
+      <VerificationTraceDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        answer={answer}
+        focusMethodId={null}
+      />
+    </>
+  );
+}

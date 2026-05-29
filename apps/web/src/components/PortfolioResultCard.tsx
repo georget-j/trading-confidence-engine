@@ -6,6 +6,7 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
+import { ResultSummary } from "./ResultSummary";
 import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
@@ -42,6 +43,8 @@ export function PortfolioResultCard({ answer, request }: Props) {
 
   return (
     <div className="space-y-6">
+      <ResultSummary answer={answer} />
+
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide text-zinc-500">

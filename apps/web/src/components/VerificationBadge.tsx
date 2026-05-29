@@ -4,18 +4,29 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { VERIFICATION_STATUS } from "@/lib/copy";
 import type { VerificationStatus } from "@/lib/types";
 
-const STYLES: Record<VerificationStatus, { label: string; classes: string }> = {
+/**
+ * Status pills always carry both an icon (color-blind safe) AND a text
+ * label so colour is never the sole carrier of meaning. Improves a11y +
+ * scannability for new users.
+ */
+const STYLES: Record<
+  VerificationStatus,
+  { label: string; icon: string; classes: string }
+> = {
   verified: {
     label: "Verified",
+    icon: "✓",
     classes:
       "bg-emerald-100 text-emerald-900 ring-emerald-300 hover:bg-emerald-200",
   },
   partially_verified: {
     label: "Partially verified",
+    icon: "⚠",
     classes: "bg-amber-100 text-amber-900 ring-amber-300 hover:bg-amber-200",
   },
   not_verified: {
     label: "Not verified",
+    icon: "✗",
     classes: "bg-rose-100 text-rose-900 ring-rose-300 hover:bg-rose-200",
   },
 };
@@ -58,7 +69,9 @@ export function VerificationBadge({ status }: Props) {
           aria-label={`Verification status: ${s.label}. Click for details.`}
           className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset transition ${s.classes}`}
         >
-          <span className="h-2 w-2 rounded-full bg-current opacity-70" />
+          <span aria-hidden className="text-sm leading-none">
+            {s.icon}
+          </span>
           {s.label}
           <span className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/40 text-[10px]">
             ?

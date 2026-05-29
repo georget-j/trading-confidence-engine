@@ -7,8 +7,9 @@ import { ChatPanel } from "@/components/ChatPanel";
 import { Compare } from "@/components/Compare";
 import { DisclaimerGate } from "@/components/DisclaimerGate";
 import { FirstRunTour } from "@/components/FirstRunTour";
-import { HedgeFinder } from "@/components/HedgeFinder";
 import { Glossary } from "@/components/Glossary";
+import { HedgeFinder } from "@/components/HedgeFinder";
+import { Home as HomePanel, type HomeDestination } from "@/components/Home";
 import { Methods } from "@/components/Methods";
 import { MethodsLab } from "@/components/MethodsLab";
 import { MyPortfolio } from "@/components/MyPortfolio";
@@ -36,6 +37,11 @@ import {
   priceStrategy,
   runBacktest,
 } from "@/lib/api";
+import {
+  SimpleModeProvider,
+  SimpleModeToggle,
+  useSimpleMode,
+} from "@/lib/simple-mode";
 import { TutorialProvider } from "@/lib/tutorial";
 import {
   buildBacktestTutorialConfig,
@@ -58,9 +64,12 @@ import type {
   VaRRequest,
 } from "@/lib/types";
 
-/** Top-level navigation — trader workflows lead; the original verification
- *  surface is preserved under the "Calculators" tab. */
+/** Top-level navigation — Home (deliberate landing page) leads, then four
+ *  trader workflows, with the original verification surface tucked under
+ *  the "Calculators" tab so the engineering portfolio audience can still
+ *  reach it. */
 type TopTab =
+  | "home"
   | "trade_ideas"
   | "my_portfolio"
   | "hedge_finder"
@@ -72,14 +81,19 @@ type CalcTab = "options" | "risk" | "portfolio" | "backtest" | "lab";
 type OptionsMode = "single" | "strategy";
 
 export default function Home() {
-  const [topTab, setTopTab] = useState<TopTab>("trade_ideas");
+  const [topTab, setTopTab] = useState<TopTab>("home");
   const [tab, setTab] = useState<CalcTab>("options");
   const [optionsMode, setOptionsMode] = useState<OptionsMode>("single");
 
-  /** Jump straight to a specific calculator sub-tab from a trader placeholder. */
+  /** Jump straight to a specific calculator sub-tab. */
   function openCalculator(sub: CalcTab) {
     setTopTab("calculators");
     setTab(sub);
+  }
+
+  /** Home card click → jump to the chosen trader tab. */
+  function handleHomePick(destination: HomeDestination) {
+    setTopTab(destination);
   }
 
   // Per-tab state — kept separate so switching tabs doesn't wipe the other side.
@@ -289,383 +303,419 @@ export default function Home() {
     }
   }
 
+  // Disclaimer acceptance — drives whether the persistent amber banner is
+  // shown (pre-accept) or collapsed to a tiny "Educational use" pill in the
+  // nav (post-accept). Reduces banner fatigue while keeping the framing
+  // permanently visible.
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+
   return (
     <TutorialProvider>
-      <main className="min-h-dvh bg-zinc-50">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
-          <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-start md:justify-between md:gap-6">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
-                Trading Confidence Engine
-              </h1>
-              <p className="mt-1 max-w-2xl text-xs text-zinc-600 sm:text-sm">
-                Independent calculators cross-verified against domain
-                invariants. Every answer carries a verification status — the
-                engine refuses to confidently report what it can&apos;t verify.
-              </p>
-            </div>
-            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs md:shrink-0 md:pt-2">
-              <SavedWorkflows onLoad={handleLoadWorkflow} />
-              <Methods />
-              <Glossary />
-              <TutorialToggle />
-              <button
-                type="button"
-                onClick={() => setTourReopenKey((k) => k + 1)}
-                className="font-medium text-zinc-600 transition hover:text-zinc-900"
-              >
-                Tour
-              </button>
-            </nav>
-          </header>
+      <SimpleModeProvider>
+        <main className="min-h-dvh bg-zinc-50">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-12">
+            <header className="mb-6 flex flex-col gap-4 sm:mb-8 md:flex-row md:items-start md:justify-between md:gap-6">
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl">
+                  Trading Confidence Engine
+                </h1>
+                <p className="mt-1 max-w-2xl text-xs text-zinc-600 sm:text-sm">
+                  Look up real stocks, analyse a portfolio, find hedges — every
+                  number cross-verified by independent methods.
+                </p>
+              </div>
+              <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs md:shrink-0 md:pt-2">
+                <SimpleModeToggle />
+                {disclaimerAccepted && (
+                  <span
+                    className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800"
+                    title="This is an educational calculation engine, not investment advice. Consult a licensed advisor before acting on any output."
+                  >
+                    ⓘ Not advice
+                  </span>
+                )}
+                <SavedWorkflows onLoad={handleLoadWorkflow} />
+                <Methods />
+                <Glossary />
+                <TutorialToggle />
+                <button
+                  type="button"
+                  onClick={() => setTourReopenKey((k) => k + 1)}
+                  className="font-medium text-zinc-600 transition hover:text-zinc-900"
+                >
+                  Tour
+                </button>
+              </nav>
+            </header>
 
-          <DisclaimerGate />
-          <FirstRunTour key={tourReopenKey} forceOpen={tourReopenKey > 0} />
+            <DisclaimerGate onAccepted={() => setDisclaimerAccepted(true)} />
+            <FirstRunTour key={tourReopenKey} forceOpen={tourReopenKey > 0} />
 
-          {/* Persistent educational-use banner — visible on every tab. */}
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900 sm:text-xs">
-            <span className="font-semibold uppercase tracking-wide">
-              Educational use only
-            </span>
-            {" — "}
-            this is a calculation engine, not investment advice. Nothing here is
-            a personal recommendation; consult a licensed advisor before acting
-            on any output.
-          </div>
+            {/* Pre-acceptance: a loud banner reinforcing the modal. Post-
+              acceptance: the small "Not advice" pill in the nav above is
+              enough, plus the footer text. */}
+            {!disclaimerAccepted && (
+              <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900 sm:text-xs">
+                <span className="font-semibold uppercase tracking-wide">
+                  Educational use only
+                </span>
+                {" — "}
+                this is a calculation engine, not investment advice. Nothing
+                here is a personal recommendation; consult a licensed advisor
+                before acting on any output.
+              </div>
+            )}
 
-          {/* Top-level tab bar: trader workflows first, the original
+            {/* Top-level tab bar: trader workflows first, the original
               verification surfaces tucked under Calculators. Scrolls
               horizontally on narrow screens to keep the pill row visually
               a single unit. */}
-          <div className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
-            <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
-              <TabButton
-                active={topTab === "trade_ideas"}
-                onClick={() => setTopTab("trade_ideas")}
-              >
-                Trade ideas
-              </TabButton>
-              <TabButton
-                active={topTab === "my_portfolio"}
-                onClick={() => setTopTab("my_portfolio")}
-              >
-                My portfolio
-              </TabButton>
-              <TabButton
-                active={topTab === "hedge_finder"}
-                onClick={() => setTopTab("hedge_finder")}
-              >
-                Hedge finder
-              </TabButton>
-              <TabButton
-                active={topTab === "compare"}
-                onClick={() => setTopTab("compare")}
-              >
-                Compare
-              </TabButton>
-              <TabButton
-                active={topTab === "calculators"}
-                onClick={() => setTopTab("calculators")}
-              >
-                Calculators
-              </TabButton>
-            </div>
-          </div>
-
-          {/* Trader-tab placeholders — Phases 7b–7e fill these in with real
-              ticker/portfolio/hedge/peer flows. */}
-          {topTab === "trade_ideas" && (
-            <TradeIdeas onOpenCalculators={() => openCalculator("lab")} />
-          )}
-          {topTab === "my_portfolio" && (
-            <MyPortfolio
-              onOpenCalculators={() => openCalculator("portfolio")}
-            />
-          )}
-          {topTab === "hedge_finder" && (
-            <HedgeFinder onOpenCalculators={() => openCalculator("backtest")} />
-          )}
-          {topTab === "compare" && (
-            <Compare onOpenCalculators={() => openCalculator("lab")} />
-          )}
-
-          {topTab === "calculators" && (
-            <div className="mb-4 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
+            <div className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
               <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
                 <TabButton
-                  active={tab === "options"}
-                  onClick={() => setTab("options")}
+                  active={topTab === "home"}
+                  onClick={() => setTopTab("home")}
                 >
-                  Options pricing
+                  Home
                 </TabButton>
                 <TabButton
-                  active={tab === "risk"}
-                  onClick={() => setTab("risk")}
+                  active={topTab === "trade_ideas"}
+                  onClick={() => setTopTab("trade_ideas")}
                 >
-                  Value at Risk
+                  Trade ideas
                 </TabButton>
                 <TabButton
-                  active={tab === "portfolio"}
-                  onClick={() => setTab("portfolio")}
+                  active={topTab === "my_portfolio"}
+                  onClick={() => setTopTab("my_portfolio")}
                 >
-                  Portfolio
+                  My portfolio
                 </TabButton>
                 <TabButton
-                  active={tab === "backtest"}
-                  onClick={() => setTab("backtest")}
+                  active={topTab === "hedge_finder"}
+                  onClick={() => setTopTab("hedge_finder")}
                 >
-                  Backtest
+                  Hedge finder
                 </TabButton>
-                <TabButton active={tab === "lab"} onClick={() => setTab("lab")}>
-                  Methods Lab
+                <TabButton
+                  active={topTab === "compare"}
+                  onClick={() => setTopTab("compare")}
+                >
+                  Compare
+                </TabButton>
+                <TabButton
+                  active={topTab === "calculators"}
+                  onClick={() => setTopTab("calculators")}
+                >
+                  Calculators
                 </TabButton>
               </div>
             </div>
-          )}
 
-          {topTab === "calculators" && tab === "options" && (
-            <div className="space-y-4">
-              <TutorialPanel config={optionsTutorial} />
-              <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
-                <ModeButton
-                  active={optionsMode === "single"}
-                  onClick={() => setOptionsMode("single")}
-                >
-                  Single leg
-                </ModeButton>
-                <ModeButton
-                  active={optionsMode === "strategy"}
-                  onClick={() => setOptionsMode("strategy")}
-                >
-                  Strategy (multi-leg)
-                </ModeButton>
+            {/* Trader-tab destinations. Home (default) → user picks one →
+              corresponding tab renders. */}
+            {topTab === "home" && <HomePanel onPick={handleHomePick} />}
+            {topTab === "trade_ideas" && (
+              <TradeIdeas onOpenCalculators={() => openCalculator("lab")} />
+            )}
+            {topTab === "my_portfolio" && (
+              <MyPortfolio
+                onOpenCalculators={() => openCalculator("portfolio")}
+              />
+            )}
+            {topTab === "hedge_finder" && (
+              <HedgeFinder
+                onOpenCalculators={() => openCalculator("backtest")}
+              />
+            )}
+            {topTab === "compare" && (
+              <Compare onOpenCalculators={() => openCalculator("lab")} />
+            )}
+
+            {topTab === "calculators" && (
+              <div className="mb-4 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
+                <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
+                  <TabButton
+                    active={tab === "options"}
+                    onClick={() => setTab("options")}
+                  >
+                    Options pricing
+                  </TabButton>
+                  <TabButton
+                    active={tab === "risk"}
+                    onClick={() => setTab("risk")}
+                  >
+                    Value at Risk
+                  </TabButton>
+                  <TabButton
+                    active={tab === "portfolio"}
+                    onClick={() => setTab("portfolio")}
+                  >
+                    Portfolio
+                  </TabButton>
+                  <TabButton
+                    active={tab === "backtest"}
+                    onClick={() => setTab("backtest")}
+                  >
+                    Backtest
+                  </TabButton>
+                  <TabButton
+                    active={tab === "lab"}
+                    onClick={() => setTab("lab")}
+                  >
+                    Methods Lab
+                  </TabButton>
+                </div>
               </div>
+            )}
 
-              {optionsMode === "single" ? (
-                <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.2fr]">
+            {topTab === "calculators" && tab === "options" && (
+              <div className="space-y-4">
+                <TutorialPanel config={optionsTutorial} />
+                <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
+                  <ModeButton
+                    active={optionsMode === "single"}
+                    onClick={() => setOptionsMode("single")}
+                  >
+                    Single leg
+                  </ModeButton>
+                  <ModeButton
+                    active={optionsMode === "strategy"}
+                    onClick={() => setOptionsMode("strategy")}
+                  >
+                    Strategy (multi-leg)
+                  </ModeButton>
+                </div>
+
+                {optionsMode === "single" ? (
+                  <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.2fr]">
+                    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+                      <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                        Chat input
+                      </h2>
+                      <ChatPanel family="options" onParsed={handleChatParsed} />
+                    </section>
+
+                    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+                      <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                        European option
+                      </h2>
+                      <PricingForm
+                        state={optionsState}
+                        onChange={setOptionsState}
+                        onSubmit={handlePriceOption}
+                        loading={optionsLoading}
+                        highlight={highlightForm}
+                      />
+                    </section>
+
+                    <ResultSection
+                      loading={optionsLoading}
+                      error={optionsError}
+                      empty="Enter inputs and price an option."
+                      emptyDetail="py_vollib closed-form and QuantLib Leisen-Reimer binomial run, then a cross-method verifier and no-arbitrage invariants decide the status."
+                    >
+                      {optionsAnswer && (
+                        <ResultCard
+                          answer={optionsAnswer}
+                          request={optionsRequest ?? undefined}
+                        />
+                      )}
+                    </ResultSection>
+                  </div>
+                ) : (
+                  <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+                    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+                      <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                        Multi-leg strategy
+                      </h2>
+                      <StrategyForm
+                        onSubmit={handlePriceStrategy}
+                        loading={strategyLoading}
+                      />
+                    </section>
+
+                    <ResultSection
+                      loading={strategyLoading}
+                      error={strategyError}
+                      empty="Compose 2–4 legs and price the strategy."
+                      emptyDetail="Each leg is priced independently by BSM closed-form and QuantLib binomial. Verification requires per-leg agreement — opposite-sign legs can't hide drift in the net premium."
+                    >
+                      {strategyAnswer && (
+                        <StrategyResultCard
+                          answer={strategyAnswer}
+                          request={strategyRequest ?? undefined}
+                        />
+                      )}
+                    </ResultSection>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {topTab === "calculators" && tab === "risk" && (
+              <>
+                <TutorialPanel config={riskTutorial} />
+                <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
                   <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                     <h2 className="mb-4 text-sm font-semibold text-zinc-900">
                       Chat input
                     </h2>
-                    <ChatPanel family="options" onParsed={handleChatParsed} />
+                    <ChatPanel
+                      family="var"
+                      onParsed={(req) => handleComputeVaR(req)}
+                    />
                   </section>
 
                   <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                     <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                      European option
+                      VaR / CVaR
                     </h2>
-                    <PricingForm
-                      state={optionsState}
-                      onChange={setOptionsState}
-                      onSubmit={handlePriceOption}
-                      loading={optionsLoading}
-                      highlight={highlightForm}
+                    <RiskForm
+                      onSubmit={handleComputeVaR}
+                      loading={riskLoading}
                     />
                   </section>
 
                   <ResultSection
-                    loading={optionsLoading}
-                    error={optionsError}
-                    empty="Enter inputs and price an option."
-                    emptyDetail="py_vollib closed-form and QuantLib Leisen-Reimer binomial run, then a cross-method verifier and no-arbitrage invariants decide the status."
+                    loading={riskLoading}
+                    error={riskError}
+                    empty="Pick a ticker and compute VaR."
+                    emptyDetail="Three independent methods (historical, parametric, Monte Carlo) cross-verified. Divergence between methods becomes a signal about fat tails in the data."
                   >
-                    {optionsAnswer && (
-                      <ResultCard
-                        answer={optionsAnswer}
-                        request={optionsRequest ?? undefined}
+                    {riskAnswer && (
+                      <RiskResultCard
+                        answer={riskAnswer}
+                        request={riskRequest ?? undefined}
                       />
                     )}
                   </ResultSection>
                 </div>
-              ) : (
-                <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
+              </>
+            )}
+
+            {topTab === "calculators" && tab === "portfolio" && (
+              <>
+                <TutorialPanel config={portfolioTutorial} />
+                <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
                   <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
                     <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                      Multi-leg strategy
+                      Chat input
                     </h2>
-                    <StrategyForm
-                      onSubmit={handlePriceStrategy}
-                      loading={strategyLoading}
+                    <ChatPanel
+                      family="portfolio"
+                      onParsed={(req) => handleOptimizePortfolio(req)}
+                    />
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+                    <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                      Portfolio optimisation
+                    </h2>
+                    <PortfolioForm
+                      onSubmit={handleOptimizePortfolio}
+                      loading={portfolioLoading}
                     />
                   </section>
 
                   <ResultSection
-                    loading={strategyLoading}
-                    error={strategyError}
-                    empty="Compose 2–4 legs and price the strategy."
-                    emptyDetail="Each leg is priced independently by BSM closed-form and QuantLib binomial. Verification requires per-leg agreement — opposite-sign legs can't hide drift in the net premium."
-                  >
-                    {strategyAnswer && (
-                      <StrategyResultCard
-                        answer={strategyAnswer}
-                        request={strategyRequest ?? undefined}
-                      />
-                    )}
-                  </ResultSection>
-                </div>
-              )}
-            </div>
-          )}
-
-          {topTab === "calculators" && tab === "risk" && (
-            <>
-              <TutorialPanel config={riskTutorial} />
-              <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                    Chat input
-                  </h2>
-                  <ChatPanel
-                    family="var"
-                    onParsed={(req) => handleComputeVaR(req)}
-                  />
-                </section>
-
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                    VaR / CVaR
-                  </h2>
-                  <RiskForm onSubmit={handleComputeVaR} loading={riskLoading} />
-                </section>
-
-                <ResultSection
-                  loading={riskLoading}
-                  error={riskError}
-                  empty="Pick a ticker and compute VaR."
-                  emptyDetail="Three independent methods (historical, parametric, Monte Carlo) cross-verified. Divergence between methods becomes a signal about fat tails in the data."
-                >
-                  {riskAnswer && (
-                    <RiskResultCard
-                      answer={riskAnswer}
-                      request={riskRequest ?? undefined}
-                    />
-                  )}
-                </ResultSection>
-              </div>
-            </>
-          )}
-
-          {topTab === "calculators" && tab === "portfolio" && (
-            <>
-              <TutorialPanel config={portfolioTutorial} />
-              <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                    Chat input
-                  </h2>
-                  <ChatPanel
-                    family="portfolio"
-                    onParsed={(req) => handleOptimizePortfolio(req)}
-                  />
-                </section>
-
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                    Portfolio optimisation
-                  </h2>
-                  <PortfolioForm
-                    onSubmit={handleOptimizePortfolio}
                     loading={portfolioLoading}
-                  />
-                </section>
-
-                <ResultSection
-                  loading={portfolioLoading}
-                  error={portfolioError}
-                  empty="Pick a basket of tickers and optimise."
-                  emptyDetail="Convex QP gives the optimal weights. Verification checks KKT conditions, cross-solver agreement, and how much the weights move under small input perturbations — a fragile optimum is honest about being one."
-                >
-                  {portfolioAnswer && (
-                    <PortfolioResultCard
-                      answer={portfolioAnswer}
-                      request={portfolioRequest ?? undefined}
-                    />
-                  )}
-                </ResultSection>
-              </div>
-            </>
-          )}
-
-          {topTab === "calculators" && tab === "backtest" && (
-            <>
-              <TutorialPanel config={backtestTutorial} />
-              <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                    Chat input
-                  </h2>
-                  <ChatPanel
-                    family="backtest"
-                    onParsed={(req) => handleRunBacktest(req)}
-                  />
-                </section>
-
-                <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="mb-4 text-sm font-semibold text-zinc-900">
-                    Backtest
-                  </h2>
-                  <BacktestForm
-                    onSubmit={handleRunBacktest}
-                    loading={backtestLoading}
-                  />
-                </section>
-
-                <ResultSection
-                  loading={backtestLoading}
-                  error={backtestError}
-                  empty="Pick a ticker and strategy."
-                  emptyDetail="Three strategies, configurable slippage, walk-forward reproducibility check, look-ahead bias detector, and a buy-and-hold benchmark for honest alpha comparison."
-                >
-                  {backtestAnswer && (
-                    <BacktestResultCard
-                      answer={backtestAnswer}
-                      initialCapital={backtestCapital}
-                      request={backtestRequest ?? undefined}
-                    />
-                  )}
-                </ResultSection>
-              </div>
-            </>
-          )}
-
-          {topTab === "calculators" && tab === "lab" && (
-            <div className="space-y-4">
-              <section className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm sm:p-6">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                    Lab
-                  </span>
-                  <h2 className="text-sm font-semibold text-zinc-900">
-                    Methods Lab
-                  </h2>
+                    error={portfolioError}
+                    empty="Pick a basket of tickers and optimise."
+                    emptyDetail="Convex QP gives the optimal weights. Verification checks KKT conditions, cross-solver agreement, and how much the weights move under small input perturbations — a fragile optimum is honest about being one."
+                  >
+                    {portfolioAnswer && (
+                      <PortfolioResultCard
+                        answer={portfolioAnswer}
+                        request={portfolioRequest ?? undefined}
+                      />
+                    )}
+                  </ResultSection>
                 </div>
-                <p className="mt-2 max-w-3xl text-xs leading-relaxed text-zinc-700 sm:text-sm">
-                  Invoke any single calculator method directly with raw inputs.
-                  No cross-method check, no invariants, no sensitivity — just
-                  the one method&apos;s number. Useful for comparing methods by
-                  hand or sanity-checking a result the orchestrated pipeline
-                  marked partially verified.
-                </p>
-              </section>
-              <MethodsLab />
-            </div>
-          )}
+              </>
+            )}
 
-          <footer className="mt-12 space-y-2 text-xs text-zinc-500">
-            <p>
-              <span className="font-semibold text-zinc-700">
-                Not investment advice.
-              </span>{" "}
-              This is a calculation engine for educational and analytical use.
-              Outputs are based on historical data and mathematical models that
-              can — and do — break in new market regimes. Consult a licensed
-              financial advisor (UK: FCA-authorised; US: SEC/state-registered
-              RIA; EU: MiFID II authorised) before acting on any output. You are
-              responsible for your own trading decisions.
-            </p>
-          </footer>
-        </div>
-      </main>
+            {topTab === "calculators" && tab === "backtest" && (
+              <>
+                <TutorialPanel config={backtestTutorial} />
+                <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+                    <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                      Chat input
+                    </h2>
+                    <ChatPanel
+                      family="backtest"
+                      onParsed={(req) => handleRunBacktest(req)}
+                    />
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm">
+                    <h2 className="mb-4 text-sm font-semibold text-zinc-900">
+                      Backtest
+                    </h2>
+                    <BacktestForm
+                      onSubmit={handleRunBacktest}
+                      loading={backtestLoading}
+                    />
+                  </section>
+
+                  <ResultSection
+                    loading={backtestLoading}
+                    error={backtestError}
+                    empty="Pick a ticker and strategy."
+                    emptyDetail="Three strategies, configurable slippage, walk-forward reproducibility check, look-ahead bias detector, and a buy-and-hold benchmark for honest alpha comparison."
+                  >
+                    {backtestAnswer && (
+                      <BacktestResultCard
+                        answer={backtestAnswer}
+                        initialCapital={backtestCapital}
+                        request={backtestRequest ?? undefined}
+                      />
+                    )}
+                  </ResultSection>
+                </div>
+              </>
+            )}
+
+            {topTab === "calculators" && tab === "lab" && (
+              <div className="space-y-4">
+                <section className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm sm:p-6">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                      Lab
+                    </span>
+                    <h2 className="text-sm font-semibold text-zinc-900">
+                      Methods Lab
+                    </h2>
+                  </div>
+                  <p className="mt-2 max-w-3xl text-xs leading-relaxed text-zinc-700 sm:text-sm">
+                    Invoke any single calculator method directly with raw
+                    inputs. No cross-method check, no invariants, no sensitivity
+                    — just the one method&apos;s number. Useful for comparing
+                    methods by hand or sanity-checking a result the orchestrated
+                    pipeline marked partially verified.
+                  </p>
+                </section>
+                <MethodsLab />
+              </div>
+            )}
+
+            <footer className="mt-12 space-y-2 text-xs text-zinc-500">
+              <p>
+                <span className="font-semibold text-zinc-700">
+                  Not investment advice.
+                </span>{" "}
+                This is a calculation engine for educational and analytical use.
+                Outputs are based on historical data and mathematical models
+                that can — and do — break in new market regimes. Consult a
+                licensed financial advisor (UK: FCA-authorised; US:
+                SEC/state-registered RIA; EU: MiFID II authorised) before acting
+                on any output. You are responsible for your own trading
+                decisions.
+              </p>
+            </footer>
+          </div>
+        </main>
+      </SimpleModeProvider>
     </TutorialProvider>
   );
 }

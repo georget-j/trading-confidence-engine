@@ -3,6 +3,7 @@ import type { FinalAnswer, VaRPayload, VaRRequest } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { MethodComparisonBars } from "./MethodComparisonBars";
+import { ResultSummary } from "./ResultSummary";
 import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
@@ -38,6 +39,8 @@ export function RiskResultCard({ answer, request }: Props) {
 
   return (
     <div className="space-y-6">
+      <ResultSummary answer={answer} />
+
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center text-xs uppercase tracking-wide text-zinc-500">

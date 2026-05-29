@@ -1,12 +1,19 @@
+"use client";
+
 import { GREEKS, OUTPUTS } from "@/lib/copy";
 import type {
   FinalAnswer,
   OptionsPriceResult,
   OptionsPricingRequest,
 } from "@/lib/types";
+import { useSimpleMode } from "@/lib/simple-mode";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
-import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
+import { ResultSummary } from "./ResultSummary";
+import {
+  SimpleVerificationLink,
+  TraceableMethodScorecard,
+} from "./TraceableMethodScorecard";
 import {
   IntermediatePnLChart,
   type IntermediateLeg,
@@ -39,9 +46,18 @@ export function ResultCard({ answer, request }: Props) {
   const primary = answer.primary_result;
   const greeks = primary.greeks;
   const cross = answer.verification.cross_method;
+  const { isAdvanced } = useSimpleMode();
 
   return (
     <div className="space-y-6">
+      <ResultSummary answer={answer} />
+
+      {!isAdvanced && (
+        <div className="-mt-3">
+          <SimpleVerificationLink answer={answer} />
+        </div>
+      )}
+
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center text-xs uppercase tracking-wide text-zinc-500">
@@ -65,9 +81,11 @@ export function ResultCard({ answer, request }: Props) {
         </div>
       </div>
 
-      <p className="text-sm leading-relaxed text-zinc-700">
-        {answer.explanation}
-      </p>
+      {isAdvanced && (
+        <p className="text-sm leading-relaxed text-zinc-700">
+          {answer.explanation}
+        </p>
+      )}
 
       <WhyPartialExpander
         status={answer.verification_status}
@@ -76,7 +94,7 @@ export function ResultCard({ answer, request }: Props) {
         family="options"
       />
 
-      <ConfidenceBreakdown verification={answer.verification} />
+      {isAdvanced && <ConfidenceBreakdown verification={answer.verification} />}
 
       {request && (
         <div>
@@ -164,62 +182,67 @@ export function ResultCard({ answer, request }: Props) {
         </div>
       )}
 
-      <div>
-        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Per-method scorecard
-        </div>
-        {cross ? (
-          <div className="mt-1 text-[11px] text-zinc-500">
-            Headline pair max Δ abs {cross.max_absolute_delta.toExponential(2)}{" "}
-            · max Δ rel {cross.max_relative_delta.toExponential(2)} ·{" "}
-            <span
-              className={
-                cross.passed
-                  ? "font-semibold text-emerald-700"
-                  : "font-semibold text-rose-700"
-              }
-            >
-              {cross.passed ? "agreement" : "DISAGREEMENT"}
-            </span>
+      {isAdvanced && (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Per-method scorecard
           </div>
-        ) : (
-          <div className="mt-1 text-[11px] text-zinc-500">
-            Fewer than two headline methods available — cross-check skipped.
-          </div>
-        )}
-        <div className="mt-2">
-          <TraceableMethodScorecard
-            answer={answer}
-            valueFormatter={(v) => `$${v.toFixed(4)}`}
-          />
-        </div>
-      </div>
-
-      <div>
-        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Invariants
-        </div>
-        <div className="mt-2 space-y-1">
-          {answer.verification.invariants.map((inv) => (
-            <div
-              key={inv.name}
-              className="flex items-center gap-2 text-xs text-zinc-600"
-            >
+          {cross ? (
+            <div className="mt-1 text-[11px] text-zinc-500">
+              Headline pair max Δ abs{" "}
+              {cross.max_absolute_delta.toExponential(2)} · max Δ rel{" "}
+              {cross.max_relative_delta.toExponential(2)} ·{" "}
               <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${
-                  inv.passed ? "bg-emerald-500" : "bg-rose-500"
-                }`}
-              />
-              <span className="font-mono">{inv.name}</span>
-              {!inv.passed && inv.detail && (
-                <span className="ml-2 text-rose-700">{inv.detail}</span>
-              )}
+                className={
+                  cross.passed
+                    ? "font-semibold text-emerald-700"
+                    : "font-semibold text-rose-700"
+                }
+              >
+                {cross.passed ? "agreement" : "DISAGREEMENT"}
+              </span>
             </div>
-          ))}
+          ) : (
+            <div className="mt-1 text-[11px] text-zinc-500">
+              Fewer than two headline methods available — cross-check skipped.
+            </div>
+          )}
+          <div className="mt-2">
+            <TraceableMethodScorecard
+              answer={answer}
+              valueFormatter={(v) => `$${v.toFixed(4)}`}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {answer.limitations.length > 0 && (
+      {isAdvanced && (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            Invariants
+          </div>
+          <div className="mt-2 space-y-1">
+            {answer.verification.invariants.map((inv) => (
+              <div
+                key={inv.name}
+                className="flex items-center gap-2 text-xs text-zinc-600"
+              >
+                <span
+                  className={`inline-block h-1.5 w-1.5 rounded-full ${
+                    inv.passed ? "bg-emerald-500" : "bg-rose-500"
+                  }`}
+                />
+                <span className="font-mono">{inv.name}</span>
+                {!inv.passed && inv.detail && (
+                  <span className="ml-2 text-rose-700">{inv.detail}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isAdvanced && answer.limitations.length > 0 && (
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600">
           <div className="font-semibold text-zinc-700">Limitations</div>
           <ul className="mt-1 list-disc space-y-0.5 pl-4">

@@ -24,3 +24,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Reduced motion — honour the OS-level "prefers-reduced-motion" setting.
+ * Disables Tailwind's `transition-*` utilities and any CSS animations for
+ * users who've opted out of motion (vestibular disorders, attention
+ * sensitivity, battery saving). Required for WCAG 2.3.3 (AAA).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

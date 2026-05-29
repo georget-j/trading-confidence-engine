@@ -7,6 +7,7 @@ import type {
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { EquityCurveChart } from "./EquityCurveChart";
 import { InfoTooltip } from "./InfoTooltip";
+import { ResultSummary } from "./ResultSummary";
 import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
@@ -45,6 +46,8 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
 
   return (
     <div className="space-y-6">
+      <ResultSummary answer={answer} />
+
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs uppercase tracking-wide text-zinc-500">
