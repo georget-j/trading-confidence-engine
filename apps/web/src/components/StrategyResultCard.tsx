@@ -6,6 +6,7 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
+import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import {
   IntermediatePnLChart,
   type IntermediateLeg,
@@ -255,43 +256,36 @@ export function StrategyResultCard({ answer, request }: Props) {
         </div>
       </div>
 
-      {/* Cross-method (per-leg worst disagreement) */}
+      {/* Per-method scorecard (with leg-level cross-check summary) */}
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Cross-method check (worst leg)
+          Per-method scorecard
         </div>
         {cross ? (
-          <div className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-600">
-                {cross.methods_compared.length} methods compared per leg
-              </span>
-              <span
-                className={
-                  cross.passed
-                    ? "font-semibold text-emerald-700"
-                    : "font-semibold text-rose-700"
-                }
-              >
-                {cross.passed
-                  ? "all legs within tolerance"
-                  : "LEG DISAGREEMENT"}
-              </span>
-            </div>
-            <div className="mt-1 grid grid-cols-2 gap-2 font-mono text-zinc-700">
-              <div>
-                max leg Δ abs: {cross.max_absolute_delta.toExponential(2)}
-              </div>
-              <div>
-                max leg Δ rel: {cross.max_relative_delta.toExponential(2)}
-              </div>
-            </div>
+          <div className="mt-1 text-[11px] text-zinc-500">
+            Worst-leg max Δ abs {cross.max_absolute_delta.toExponential(2)} ·
+            max Δ rel {cross.max_relative_delta.toExponential(2)} ·{" "}
+            <span
+              className={
+                cross.passed
+                  ? "font-semibold text-emerald-700"
+                  : "font-semibold text-rose-700"
+              }
+            >
+              {cross.passed ? "all legs within tolerance" : "LEG DISAGREEMENT"}
+            </span>
           </div>
         ) : (
-          <div className="mt-2 text-xs text-zinc-500">
+          <div className="mt-1 text-[11px] text-zinc-500">
             Only one method available — cross-check skipped.
           </div>
         )}
+        <div className="mt-2">
+          <TraceableMethodScorecard
+            answer={answer}
+            valueFormatter={(v) => `$${v.toFixed(4)} net`}
+          />
+        </div>
       </div>
 
       {/* Invariants — list per-leg failures explicitly */}

@@ -1,0 +1,334 @@
+{
+  "_meta": {
+    "description": "Bundled universe for hedge finder + peer comparison. ~50 large-caps + sector ETFs + asset-class ETFs. Refresh manually via 'make refresh-universe' once the script lands.",
+    "as_of": "2026-05",
+    "source": "Curated for Phase 7"
+  },
+  "tickers": [
+    {
+      "ticker": "SPY",
+      "name": "SPDR S&P 500 ETF",
+      "sector": "Broad Market ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "sector": "Technology ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "DIA",
+      "name": "SPDR Dow Jones Industrial Average ETF",
+      "sector": "Broad Market ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "IWM",
+      "name": "iShares Russell 2000 ETF",
+      "sector": "Small-Cap ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "EFA",
+      "name": "iShares MSCI EAFE ETF",
+      "sector": "International Equity ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "EEM",
+      "name": "iShares MSCI Emerging Markets ETF",
+      "sector": "Emerging Markets ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLK",
+      "name": "Technology Select Sector SPDR",
+      "sector": "Technology ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLF",
+      "name": "Financial Select Sector SPDR",
+      "sector": "Financials ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLE",
+      "name": "Energy Select Sector SPDR",
+      "sector": "Energy ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLV",
+      "name": "Health Care Select Sector SPDR",
+      "sector": "Healthcare ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLY",
+      "name": "Consumer Discretionary Select Sector SPDR",
+      "sector": "Consumer Discretionary ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLP",
+      "name": "Consumer Staples Select Sector SPDR",
+      "sector": "Consumer Staples ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLI",
+      "name": "Industrial Select Sector SPDR",
+      "sector": "Industrials ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLU",
+      "name": "Utilities Select Sector SPDR",
+      "sector": "Utilities ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLB",
+      "name": "Materials Select Sector SPDR",
+      "sector": "Materials ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLRE",
+      "name": "Real Estate Select Sector SPDR",
+      "sector": "Real Estate ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "XLC",
+      "name": "Communication Services Select Sector SPDR",
+      "sector": "Communication Services ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "TLT",
+      "name": "iShares 20+ Year Treasury Bond ETF",
+      "sector": "Long Treasuries",
+      "kind": "etf"
+    },
+    {
+      "ticker": "IEF",
+      "name": "iShares 7-10 Year Treasury Bond ETF",
+      "sector": "Intermediate Treasuries",
+      "kind": "etf"
+    },
+    {
+      "ticker": "SHY",
+      "name": "iShares 1-3 Year Treasury Bond ETF",
+      "sector": "Short Treasuries",
+      "kind": "etf"
+    },
+    {
+      "ticker": "LQD",
+      "name": "iShares iBoxx Investment Grade Corporate Bond ETF",
+      "sector": "Investment Grade Credit",
+      "kind": "etf"
+    },
+    {
+      "ticker": "HYG",
+      "name": "iShares iBoxx High Yield Corporate Bond ETF",
+      "sector": "High Yield Credit",
+      "kind": "etf"
+    },
+    {
+      "ticker": "TIP",
+      "name": "iShares TIPS Bond ETF",
+      "sector": "Inflation-Linked",
+      "kind": "etf"
+    },
+    {
+      "ticker": "GLD",
+      "name": "SPDR Gold Shares",
+      "sector": "Precious Metals",
+      "kind": "etf"
+    },
+    {
+      "ticker": "SLV",
+      "name": "iShares Silver Trust",
+      "sector": "Precious Metals",
+      "kind": "etf"
+    },
+    {
+      "ticker": "USO",
+      "name": "United States Oil Fund",
+      "sector": "Commodity (Oil)",
+      "kind": "etf"
+    },
+    {
+      "ticker": "DBC",
+      "name": "Invesco DB Commodity Index",
+      "sector": "Broad Commodities",
+      "kind": "etf"
+    },
+    {
+      "ticker": "UUP",
+      "name": "Invesco DB US Dollar Index Bullish",
+      "sector": "Currency (USD)",
+      "kind": "etf"
+    },
+    {
+      "ticker": "VNQ",
+      "name": "Vanguard Real Estate ETF",
+      "sector": "Real Estate ETF",
+      "kind": "etf"
+    },
+    {
+      "ticker": "SQQQ",
+      "name": "ProShares UltraPro Short QQQ",
+      "sector": "Inverse Equity (3x)",
+      "kind": "etf"
+    },
+    {
+      "ticker": "SH",
+      "name": "ProShares Short S&P 500",
+      "sector": "Inverse Equity (1x)",
+      "kind": "etf"
+    },
+    {
+      "ticker": "AAPL",
+      "name": "Apple Inc.",
+      "sector": "Technology",
+      "kind": "stock"
+    },
+    {
+      "ticker": "MSFT",
+      "name": "Microsoft Corp.",
+      "sector": "Technology",
+      "kind": "stock"
+    },
+    {
+      "ticker": "GOOGL",
+      "name": "Alphabet Inc.",
+      "sector": "Communication Services",
+      "kind": "stock"
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms Inc.",
+      "sector": "Communication Services",
+      "kind": "stock"
+    },
+    {
+      "ticker": "AMZN",
+      "name": "Amazon.com Inc.",
+      "sector": "Consumer Discretionary",
+      "kind": "stock"
+    },
+    {
+      "ticker": "NVDA",
+      "name": "NVIDIA Corp.",
+      "sector": "Technology",
+      "kind": "stock"
+    },
+    {
+      "ticker": "TSLA",
+      "name": "Tesla Inc.",
+      "sector": "Consumer Discretionary",
+      "kind": "stock"
+    },
+    {
+      "ticker": "BRK-B",
+      "name": "Berkshire Hathaway",
+      "sector": "Financials",
+      "kind": "stock"
+    },
+    {
+      "ticker": "JPM",
+      "name": "JPMorgan Chase",
+      "sector": "Financials",
+      "kind": "stock"
+    },
+    {
+      "ticker": "V",
+      "name": "Visa Inc.",
+      "sector": "Financials",
+      "kind": "stock"
+    },
+    {
+      "ticker": "MA",
+      "name": "Mastercard Inc.",
+      "sector": "Financials",
+      "kind": "stock"
+    },
+    {
+      "ticker": "BAC",
+      "name": "Bank of America",
+      "sector": "Financials",
+      "kind": "stock"
+    },
+    {
+      "ticker": "WMT",
+      "name": "Walmart Inc.",
+      "sector": "Consumer Staples",
+      "kind": "stock"
+    },
+    {
+      "ticker": "PG",
+      "name": "Procter & Gamble",
+      "sector": "Consumer Staples",
+      "kind": "stock"
+    },
+    {
+      "ticker": "KO",
+      "name": "Coca-Cola",
+      "sector": "Consumer Staples",
+      "kind": "stock"
+    },
+    {
+      "ticker": "JNJ",
+      "name": "Johnson & Johnson",
+      "sector": "Healthcare",
+      "kind": "stock"
+    },
+    {
+      "ticker": "UNH",
+      "name": "UnitedHealth Group",
+      "sector": "Healthcare",
+      "kind": "stock"
+    },
+    {
+      "ticker": "PFE",
+      "name": "Pfizer",
+      "sector": "Healthcare",
+      "kind": "stock"
+    },
+    {
+      "ticker": "XOM",
+      "name": "Exxon Mobil",
+      "sector": "Energy",
+      "kind": "stock"
+    },
+    { "ticker": "CVX", "name": "Chevron", "sector": "Energy", "kind": "stock" },
+    {
+      "ticker": "AMD",
+      "name": "Advanced Micro Devices",
+      "sector": "Technology",
+      "kind": "stock"
+    },
+    {
+      "ticker": "AVGO",
+      "name": "Broadcom",
+      "sector": "Technology",
+      "kind": "stock"
+    },
+    {
+      "ticker": "MU",
+      "name": "Micron Technology",
+      "sector": "Technology",
+      "kind": "stock"
+    },
+    {
+      "ticker": "TSM",
+      "name": "Taiwan Semiconductor",
+      "sector": "Technology",
+      "kind": "stock"
+    }
+  ]
+}

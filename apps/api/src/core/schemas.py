@@ -496,9 +496,37 @@ class InvariantCheck(_BaseModel):
     detail: str | None = None
 
 
+class AgreementStatus(StrEnum):
+    AGREES = "agrees"
+    DIVERGES = "diverges"
+    NOT_APPLICABLE = "n/a"
+
+
+class PerMethodStatus(_BaseModel):
+    """One row per calculator in the per-method scorecard.
+
+    Aggregates everything we know about a single method's contribution to the
+    final verdict: did it run, what value did it produce, did it agree with
+    its peers, and which invariants did its own payload satisfy/violate.
+    """
+
+    method_id: str
+    method_name: str
+    ran: bool
+    value: float | None = None
+    agreement_status: AgreementStatus = AgreementStatus.NOT_APPLICABLE
+    divergent_against: list[str] = Field(default_factory=list)
+    invariants_passed: list[str] = Field(default_factory=list)
+    invariants_failed: list[str] = Field(default_factory=list)
+    sensitivity_passed: bool | None = None
+    duration_ms: float | None = None
+    error: str | None = None
+
+
 class VerificationResult(_BaseModel):
     cross_method: CrossMethodCheck | None = None
     invariants: list[InvariantCheck] = Field(default_factory=list)
+    per_method_status: list[PerMethodStatus] = Field(default_factory=list)
     method_agreement_score: Annotated[float, Field(ge=0, le=1)]
     bounds_check_score: Annotated[float, Field(ge=0, le=1)]
     input_quality_score: Annotated[float, Field(ge=0, le=1)] = 1.0

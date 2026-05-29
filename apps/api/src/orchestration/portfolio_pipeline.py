@@ -18,16 +18,24 @@ import numpy as np
 from src.calculators.portfolio import optimize
 from src.core.audit import new_audit_log, record
 from src.core.schemas import (
+    AgreementStatus,
     AuditLog,
     CalcFamily,
     CalculationRequest,
+    CalculatorResult,
+    CrossMethodCheck,
     FinalAnswer,
+    InvariantCheck,
+    PerMethodStatus,
     PortfolioPayload,
     PortfolioRequest,
 )
 from src.data_providers import MarketDataProvider, default_provider
 from src.data_providers.market_data import MarketDataError
-from src.scoring.portfolio_confidence import score_portfolio_verification
+from src.scoring.portfolio_confidence import (
+    STABLE_THRESHOLD,
+    score_portfolio_verification,
+)
 from src.verification.cross_solver_portfolio import cross_check_solvers
 from src.verification.invariants_portfolio import check_portfolio_invariants
 from src.verification.sensitivity_portfolio import compute_instability
@@ -81,9 +89,16 @@ def run_portfolio_pipeline(
         cross = None
         instability_score = 1.0  # unable to assess — treat as max instability
 
+    per_method = _build_portfolio_per_method(
+        primary=primary,
+        invariants=invariants,
+        cross_check=cross,
+        instability_score=instability_score,
+    )
     verification = score_portfolio_verification(
         cross_check=cross,
         invariants=invariants,
+        per_method_status=per_method,
         instability_score=instability_score,
         input_quality=1.0,
         numerical_stability=1.0,
@@ -118,6 +133,86 @@ def run_portfolio_pipeline(
     )
     record(log, "respond", answer.model_dump(mode="json"))
     return answer, log
+
+
+def _build_portfolio_per_method(
+    *,
+    primary: CalculatorResult,
+    invariants: list[InvariantCheck],
+    cross_check: CrossMethodCheck | None,
+    instability_score: float,
+) -> list[PerMethodStatus]:
+    """Per-method rows for the portfolio family.
+
+    The primary CalculatorResult is the CLARABEL solver. When the cross-check
+    runs, an additional "scs" pseudo-row is synthesised so the scorecard
+    surfaces solver-vs-solver agreement the same way options and VaR surface
+    method-vs-method agreement. The sensitivity check is reported on the
+    primary row (it's a property of the optimum, not of any one solver).
+    """
+    rows: list[PerMethodStatus] = []
+    passed_names = [c.name for c in invariants if c.passed]
+    failed_names = [c.name for c in invariants if not c.passed]
+    sensitivity_ok = instability_score <= STABLE_THRESHOLD
+
+    if cross_check is None:
+        primary_agreement = AgreementStatus.NOT_APPLICABLE
+        primary_divergent: list[str] = []
+        cross_partner_id: str | None = None
+    else:
+        primary_agreement = (
+            AgreementStatus.AGREES if cross_check.passed else AgreementStatus.DIVERGES
+        )
+        # methods_compared = ["clarabel", "scs"]; identify the partner that
+        # isn't the primary solver id (clarabel by convention here).
+        partners = [m for m in cross_check.methods_compared if m != "clarabel"]
+        cross_partner_id = partners[0] if partners else None
+        primary_divergent = (
+            [cross_partner_id]
+            if cross_partner_id and not cross_check.passed
+            else []
+        )
+
+    rows.append(
+        PerMethodStatus(
+            method_id=primary.calculator_id,
+            method_name=primary.method_name,
+            ran=primary.succeeded,
+            value=(
+                primary.payload.sharpe_ratio
+                if primary.succeeded and isinstance(primary.payload, PortfolioPayload)
+                else None
+            ),
+            agreement_status=primary_agreement,
+            divergent_against=primary_divergent,
+            invariants_passed=passed_names if primary.succeeded else [],
+            invariants_failed=failed_names if primary.succeeded else [],
+            sensitivity_passed=sensitivity_ok if primary.succeeded else None,
+            duration_ms=primary.duration_ms,
+            error=primary.error,
+        )
+    )
+
+    if cross_partner_id is not None and cross_check is not None:
+        rows.append(
+            PerMethodStatus(
+                method_id=cross_partner_id,
+                method_name="SCS solver (cross-check)",
+                ran=True,
+                value=None,  # SCS weights aren't exposed as a CalculatorResult
+                agreement_status=primary_agreement,
+                divergent_against=(
+                    [primary.calculator_id] if not cross_check.passed else []
+                ),
+                invariants_passed=[],
+                invariants_failed=[],
+                sensitivity_passed=None,
+                duration_ms=None,
+                error=None,
+            )
+        )
+
+    return rows
 
 
 # Re-raise market data errors as-is so the route handler can return 502.

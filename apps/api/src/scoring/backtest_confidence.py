@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from src.core.schemas import (
     InvariantCheck,
+    PerMethodStatus,
     VerificationResult,
     VerificationStatus,
 )
@@ -31,6 +32,7 @@ def score_backtest_verification(
     lookahead_clean: bool,
     slippage_collapse: float,
     input_quality: float,
+    per_method_status: list[PerMethodStatus] | None = None,
 ) -> VerificationResult:
     bounds_score = 1.0 if all(i.passed for i in invariants) else 0.0
     stability_score = (
@@ -49,6 +51,7 @@ def score_backtest_verification(
     return VerificationResult(
         cross_method=None,  # backtests don't have a cross-method comparator
         invariants=invariants,
+        per_method_status=per_method_status or [],
         method_agreement_score=1.0 if walk_forward_reproducible else 0.0,
         bounds_check_score=bounds_score,
         input_quality_score=input_quality,

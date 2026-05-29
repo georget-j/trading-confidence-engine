@@ -6,6 +6,7 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
+import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
 import { WeightsChart } from "./WeightsChart";
@@ -148,15 +149,20 @@ export function PortfolioResultCard({ answer, request }: Props) {
 
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Solver
+          Per-method scorecard
         </div>
-        <div className="mt-2 rounded-md border border-zinc-200 px-3 py-2 text-xs text-zinc-700">
+        <div className="mt-1 text-[11px] text-zinc-500">
+          Primary solver:{" "}
           <span className="font-mono">{primary.solver_name}</span>
           {primary.iterations !== null && (
-            <span className="ml-2 text-zinc-500">
-              · {primary.iterations} iterations
-            </span>
+            <> · {primary.iterations} iterations</>
           )}
+        </div>
+        <div className="mt-2">
+          <TraceableMethodScorecard
+            answer={answer}
+            valueFormatter={(v) => `Sharpe ${v.toFixed(3)}`}
+          />
         </div>
       </div>
 

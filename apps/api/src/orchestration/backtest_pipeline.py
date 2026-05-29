@@ -10,12 +10,14 @@ import numpy as np
 from src.calculators.backtest import run_backtest
 from src.core.audit import new_audit_log, record
 from src.core.schemas import (
+    AgreementStatus,
     AuditLog,
     BacktestPayload,
     BacktestRequest,
     CalcFamily,
     CalculationRequest,
     FinalAnswer,
+    PerMethodStatus,
 )
 from src.data_providers import MarketDataProvider, default_provider
 from src.scoring.backtest_confidence import score_backtest_verification
@@ -63,12 +65,47 @@ def run_backtest_pipeline(
     else:
         collapse = 0.0
 
+    passed_inv = [c.name for c in invariants if c.passed]
+    failed_inv = [c.name for c in invariants if not c.passed]
+    # Synthesise the binary backtest checks as additional invariant-style flags
+    # on the per-method row so the UI can show "5/5 invariants" once
+    # reproducibility + look-ahead pass.
+    if reproducible:
+        passed_inv.append("walk_forward_reproducible")
+    else:
+        failed_inv.append("walk_forward_reproducible")
+    if lookahead_clean:
+        passed_inv.append("lookahead_clean")
+    else:
+        failed_inv.append("lookahead_clean")
+
+    per_method = [
+        PerMethodStatus(
+            method_id=result.calculator_id,
+            method_name=result.method_name,
+            ran=result.succeeded,
+            value=(
+                result.payload.metrics.total_return
+                if result.succeeded and isinstance(result.payload, BacktestPayload)
+                else None
+            ),
+            agreement_status=AgreementStatus.NOT_APPLICABLE,
+            divergent_against=[],
+            invariants_passed=passed_inv if result.succeeded else [],
+            invariants_failed=failed_inv if result.succeeded else [],
+            sensitivity_passed=collapse <= 0.10 if result.succeeded else None,
+            duration_ms=result.duration_ms,
+            error=result.error,
+        )
+    ]
+
     verification = score_backtest_verification(
         invariants=invariants,
         walk_forward_reproducible=reproducible,
         lookahead_clean=lookahead_clean,
         slippage_collapse=collapse,
         input_quality=1.0,
+        per_method_status=per_method,
     )
     record(log, "verify", verification.model_dump(mode="json"))
 

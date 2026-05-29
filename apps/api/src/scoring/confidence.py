@@ -12,6 +12,7 @@ from __future__ import annotations
 from src.core.schemas import (
     CrossMethodCheck,
     InvariantCheck,
+    PerMethodStatus,
     VerificationResult,
     VerificationStatus,
 )
@@ -26,6 +27,7 @@ def score_verification(
     invariants: list[InvariantCheck],
     input_quality: float,
     numerical_stability: float,
+    per_method_status: list[PerMethodStatus] | None = None,
 ) -> VerificationResult:
     bounds_score = 1.0 if all(i.passed for i in invariants) else 0.0
 
@@ -45,6 +47,7 @@ def score_verification(
     return VerificationResult(
         cross_method=cross_check,
         invariants=invariants,
+        per_method_status=per_method_status or [],
         method_agreement_score=agreement_score,
         bounds_check_score=bounds_score,
         input_quality_score=input_quality,

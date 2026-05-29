@@ -7,6 +7,7 @@ import type {
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { EquityCurveChart } from "./EquityCurveChart";
 import { InfoTooltip } from "./InfoTooltip";
+import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
 import { VerificationBadge } from "./VerificationBadge";
@@ -218,6 +219,22 @@ export function BacktestResultCard({ answer, initialCapital, request }: Props) {
             label="No look-ahead bias"
             passed={p.lookahead_clean}
             description="Positions don't correlate with future returns more than with current ones."
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Per-method scorecard
+        </div>
+        <div className="mt-1 text-[11px] text-zinc-500">
+          Backtests run as a single method — no cross-method comparator.
+          Reproducibility and look-ahead surface here as synthesised invariants.
+        </div>
+        <div className="mt-2">
+          <TraceableMethodScorecard
+            answer={answer}
+            valueFormatter={(v) => `${(v * 100).toFixed(2)}% total`}
           />
         </div>
       </div>

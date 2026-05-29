@@ -6,6 +6,7 @@ import type {
 } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
+import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import {
   IntermediatePnLChart,
   type IntermediateLeg,
@@ -165,57 +166,32 @@ export function ResultCard({ answer, request }: Props) {
 
       <div>
         <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Cross-method check
+          Per-method scorecard
         </div>
         {cross ? (
-          <div className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-600">
-                {cross.methods_compared.length} methods compared
-              </span>
-              <span
-                className={
-                  cross.passed
-                    ? "font-semibold text-emerald-700"
-                    : "font-semibold text-rose-700"
-                }
-              >
-                {cross.passed ? "agreement within tolerance" : "DISAGREEMENT"}
-              </span>
-            </div>
-            <div className="mt-1 grid grid-cols-2 gap-2 font-mono text-zinc-700">
-              <div>max Δ abs: {cross.max_absolute_delta.toExponential(2)}</div>
-              <div>max Δ rel: {cross.max_relative_delta.toExponential(2)}</div>
-            </div>
+          <div className="mt-1 text-[11px] text-zinc-500">
+            Headline pair max Δ abs {cross.max_absolute_delta.toExponential(2)}{" "}
+            · max Δ rel {cross.max_relative_delta.toExponential(2)} ·{" "}
+            <span
+              className={
+                cross.passed
+                  ? "font-semibold text-emerald-700"
+                  : "font-semibold text-rose-700"
+              }
+            >
+              {cross.passed ? "agreement" : "DISAGREEMENT"}
+            </span>
           </div>
         ) : (
-          <div className="mt-2 text-xs text-zinc-500">
-            Only one method available — cross-check skipped.
+          <div className="mt-1 text-[11px] text-zinc-500">
+            Fewer than two headline methods available — cross-check skipped.
           </div>
         )}
-        <div className="mt-2 space-y-1">
-          {answer.calculator_results.map((c) => (
-            <div
-              key={c.calculator_id}
-              className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-xs"
-            >
-              <span className="text-zinc-700">{c.method_name}</span>
-              <span
-                className={
-                  c.succeeded
-                    ? "font-mono font-semibold text-zinc-900"
-                    : "font-mono font-semibold text-rose-700"
-                }
-              >
-                {c.succeeded && c.payload.kind === "options_price"
-                  ? `$${c.payload.price.toFixed(4)}`
-                  : "FAILED"}
-                <span className="ml-2 text-zinc-400">
-                  {c.duration_ms.toFixed(1)}ms
-                </span>
-              </span>
-            </div>
-          ))}
+        <div className="mt-2">
+          <TraceableMethodScorecard
+            answer={answer}
+            valueFormatter={(v) => `$${v.toFixed(4)}`}
+          />
         </div>
       </div>
 

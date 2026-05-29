@@ -15,12 +15,16 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
 from src.api.routes import backtest as backtest_routes  # noqa: E402
 from src.api.routes import chat as chat_routes  # noqa: E402
+from src.api.routes import compare as compare_routes  # noqa: E402
+from src.api.routes import hedge as hedge_routes  # noqa: E402
 from src.api.routes import lab as lab_routes  # noqa: E402
 from src.api.routes import methods as methods_routes  # noqa: E402
 from src.api.routes import options as options_routes  # noqa: E402
 from src.api.routes import portfolio as portfolio_routes  # noqa: E402
+from src.api.routes import portfolio_analysis as portfolio_analysis_routes  # noqa: E402
 from src.api.routes import prices as prices_routes  # noqa: E402
 from src.api.routes import risk as risk_routes  # noqa: E402
+from src.api.routes import ticker as ticker_routes  # noqa: E402
 
 app = FastAPI(
     title="Trading Confidence Engine",
@@ -62,6 +66,14 @@ app.include_router(chat_routes.router, prefix="/chat", tags=["chat"])
 app.include_router(methods_routes.router, prefix="/api/methods", tags=["methods"])
 app.include_router(prices_routes.router, prefix="/api/prices", tags=["prices"])
 app.include_router(lab_routes.router, prefix="/lab", tags=["lab"])
+app.include_router(ticker_routes.router, prefix="/api/ticker", tags=["ticker"])
+app.include_router(
+    portfolio_analysis_routes.router,
+    prefix="/api/portfolio",
+    tags=["portfolio-analysis"],
+)
+app.include_router(hedge_routes.router, prefix="/api/hedge", tags=["hedge"])
+app.include_router(compare_routes.router, prefix="/api/compare", tags=["compare"])
 
 
 @app.get("/health")

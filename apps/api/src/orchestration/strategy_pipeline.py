@@ -18,6 +18,7 @@ from src.core.schemas import (
     AuditLog,
     CalcFamily,
     CalculationRequest,
+    CalculatorResult,
     FinalAnswer,
     OptionsStrategyPayload,
     OptionsStrategyRequest,
@@ -25,8 +26,13 @@ from src.core.schemas import (
     VerificationStatus,
 )
 from src.scoring.confidence import score_verification
+from src.verification.cross_method import (
+    DEFAULT_PRICE_ABS_TOL,
+    DEFAULT_PRICE_REL_TOL,
+)
 from src.verification.cross_method_strategy import cross_check_strategy_methods
 from src.verification.invariants_strategy import check_strategy_invariants
+from src.verification.per_method import build_per_method_status
 
 
 def run_strategy_pipeline(
@@ -53,9 +59,18 @@ def run_strategy_pipeline(
 
     cross = cross_check_strategy_methods(calc_results)
     invariants = check_strategy_invariants(payload, calc_results)
+    per_method = build_per_method_status(
+        results=calc_results,
+        cross_check=cross,
+        value_extractor=_strategy_net_premium_extractor,
+        invariant_runner=lambda r: check_strategy_invariants(payload, [r]),
+        abs_tol=DEFAULT_PRICE_ABS_TOL,
+        rel_tol=DEFAULT_PRICE_REL_TOL,
+    )
     verification = score_verification(
         cross_check=cross,
         invariants=invariants,
+        per_method_status=per_method,
         input_quality=1.0,
         numerical_stability=1.0,
     )
@@ -79,6 +94,12 @@ def run_strategy_pipeline(
     record(log, "respond", answer.model_dump(mode="json"))
 
     return answer, log
+
+
+def _strategy_net_premium_extractor(r: CalculatorResult) -> float | None:
+    if r.succeeded and isinstance(r.payload, OptionsStrategyPayload):
+        return r.payload.net_premium
+    return None
 
 
 def _build_explanation(

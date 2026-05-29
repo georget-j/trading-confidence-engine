@@ -25,9 +25,11 @@ from src.data_providers import MarketDataProvider, default_provider
 from src.data_providers.market_data import MarketDataError
 from src.scoring.var_confidence import score_var_verification
 from src.verification.cross_method_var import (
+    VAR_WIDE_REL_TOL,
     cross_check_var,
 )
 from src.verification.invariants_var import check_var_invariants
+from src.verification.per_method import build_per_method_status
 
 
 def run_var_pipeline(
@@ -54,9 +56,19 @@ def run_var_pipeline(
     # ---- verify ----------------------------------------------------------
     cross = cross_check_var(calc_results)
     invariants = check_var_invariants(var_request, calc_results)
+    per_method = build_per_method_status(
+        results=calc_results,
+        cross_check=cross,
+        value_extractor=_var_loss_extractor,
+        invariant_runner=lambda r: check_var_invariants(var_request, [r]),
+        # VaR uses pure relative tolerance (the wide band); abs_tol stays 0.
+        abs_tol=0.0,
+        rel_tol=VAR_WIDE_REL_TOL,
+    )
     verification = score_var_verification(
         cross_check=cross,
         invariants=invariants,
+        per_method_status=per_method,
         input_quality=1.0 if returns else 0.0,
         numerical_stability=1.0,
     )
@@ -85,6 +97,12 @@ def run_var_pipeline(
     )
     record(log, "respond", answer.model_dump(mode="json"))
     return answer, log
+
+
+def _var_loss_extractor(r: CalculatorResult) -> float | None:
+    if r.succeeded and isinstance(r.payload, VaRPayload):
+        return r.payload.var_loss
+    return None
 
 
 def _resolve_returns(

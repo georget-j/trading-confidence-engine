@@ -194,9 +194,26 @@ export interface InvariantCheck {
   detail: string | null;
 }
 
+export type AgreementStatus = "agrees" | "diverges" | "n/a";
+
+export interface PerMethodStatus {
+  method_id: string;
+  method_name: string;
+  ran: boolean;
+  value: number | null;
+  agreement_status: AgreementStatus;
+  divergent_against: string[];
+  invariants_passed: string[];
+  invariants_failed: string[];
+  sensitivity_passed: boolean | null;
+  duration_ms: number | null;
+  error: string | null;
+}
+
 export interface VerificationResult {
   cross_method: CrossMethodCheck | null;
   invariants: InvariantCheck[];
+  per_method_status: PerMethodStatus[];
   method_agreement_score: number;
   bounds_check_score: number;
   input_quality_score: number;

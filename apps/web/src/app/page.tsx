@@ -4,9 +4,14 @@ import { useState } from "react";
 import { BacktestForm } from "@/components/BacktestForm";
 import { BacktestResultCard } from "@/components/BacktestResultCard";
 import { ChatPanel } from "@/components/ChatPanel";
+import { Compare } from "@/components/Compare";
+import { DisclaimerGate } from "@/components/DisclaimerGate";
 import { FirstRunTour } from "@/components/FirstRunTour";
+import { HedgeFinder } from "@/components/HedgeFinder";
 import { Glossary } from "@/components/Glossary";
 import { Methods } from "@/components/Methods";
+import { MethodsLab } from "@/components/MethodsLab";
+import { MyPortfolio } from "@/components/MyPortfolio";
 import { PortfolioForm } from "@/components/PortfolioForm";
 import { PortfolioResultCard } from "@/components/PortfolioResultCard";
 import { SavedWorkflows } from "@/components/SavedWorkflows";
@@ -21,6 +26,7 @@ import { RiskForm } from "@/components/RiskForm";
 import { RiskResultCard } from "@/components/RiskResultCard";
 import { StrategyForm } from "@/components/StrategyForm";
 import { StrategyResultCard } from "@/components/StrategyResultCard";
+import { TradeIdeas } from "@/components/TradeIdeas";
 import { TutorialPanel, TutorialToggle } from "@/components/TutorialPanel";
 import type { SavedWorkflow } from "@/lib/workflows";
 import {
@@ -52,12 +58,29 @@ import type {
   VaRRequest,
 } from "@/lib/types";
 
-type Tab = "options" | "risk" | "portfolio" | "backtest";
+/** Top-level navigation — trader workflows lead; the original verification
+ *  surface is preserved under the "Calculators" tab. */
+type TopTab =
+  | "trade_ideas"
+  | "my_portfolio"
+  | "hedge_finder"
+  | "compare"
+  | "calculators";
+/** Sub-tab inside the Calculators tab — wraps the original four educational
+ *  surfaces plus the Methods Lab. */
+type CalcTab = "options" | "risk" | "portfolio" | "backtest" | "lab";
 type OptionsMode = "single" | "strategy";
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>("options");
+  const [topTab, setTopTab] = useState<TopTab>("trade_ideas");
+  const [tab, setTab] = useState<CalcTab>("options");
   const [optionsMode, setOptionsMode] = useState<OptionsMode>("single");
+
+  /** Jump straight to a specific calculator sub-tab from a trader placeholder. */
+  function openCalculator(sub: CalcTab) {
+    setTopTab("calculators");
+    setTab(sub);
+  }
 
   // Per-tab state — kept separate so switching tabs doesn't wipe the other side.
   const [optionsState, setOptionsState] =
@@ -230,6 +253,8 @@ export default function Home() {
   }
 
   function handleLoadWorkflow(wf: SavedWorkflow) {
+    // Saved workflows always belong to a Calculators sub-tab; jump there.
+    setTopTab("calculators");
     if (wf.family === "options") {
       setTab("options");
       const req = wf.payload as OptionsPricingRequest;
@@ -294,37 +319,111 @@ export default function Home() {
             </nav>
           </header>
 
+          <DisclaimerGate />
           <FirstRunTour key={tourReopenKey} forceOpen={tourReopenKey > 0} />
 
-          {/* Tab bar: scrolls horizontally on narrow screens rather than wrapping
-              so the pill row stays visually a single unit. */}
+          {/* Persistent educational-use banner — visible on every tab. */}
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900 sm:text-xs">
+            <span className="font-semibold uppercase tracking-wide">
+              Educational use only
+            </span>
+            {" — "}
+            this is a calculation engine, not investment advice. Nothing here is
+            a personal recommendation; consult a licensed advisor before acting
+            on any output.
+          </div>
+
+          {/* Top-level tab bar: trader workflows first, the original
+              verification surfaces tucked under Calculators. Scrolls
+              horizontally on narrow screens to keep the pill row visually
+              a single unit. */}
           <div className="mb-6 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
             <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
               <TabButton
-                active={tab === "options"}
-                onClick={() => setTab("options")}
+                active={topTab === "trade_ideas"}
+                onClick={() => setTopTab("trade_ideas")}
               >
-                Options pricing
-              </TabButton>
-              <TabButton active={tab === "risk"} onClick={() => setTab("risk")}>
-                Value at Risk
+                Trade ideas
               </TabButton>
               <TabButton
-                active={tab === "portfolio"}
-                onClick={() => setTab("portfolio")}
+                active={topTab === "my_portfolio"}
+                onClick={() => setTopTab("my_portfolio")}
               >
-                Portfolio
+                My portfolio
               </TabButton>
               <TabButton
-                active={tab === "backtest"}
-                onClick={() => setTab("backtest")}
+                active={topTab === "hedge_finder"}
+                onClick={() => setTopTab("hedge_finder")}
               >
-                Backtest
+                Hedge finder
+              </TabButton>
+              <TabButton
+                active={topTab === "compare"}
+                onClick={() => setTopTab("compare")}
+              >
+                Compare
+              </TabButton>
+              <TabButton
+                active={topTab === "calculators"}
+                onClick={() => setTopTab("calculators")}
+              >
+                Calculators
               </TabButton>
             </div>
           </div>
 
-          {tab === "options" && (
+          {/* Trader-tab placeholders — Phases 7b–7e fill these in with real
+              ticker/portfolio/hedge/peer flows. */}
+          {topTab === "trade_ideas" && (
+            <TradeIdeas onOpenCalculators={() => openCalculator("lab")} />
+          )}
+          {topTab === "my_portfolio" && (
+            <MyPortfolio
+              onOpenCalculators={() => openCalculator("portfolio")}
+            />
+          )}
+          {topTab === "hedge_finder" && (
+            <HedgeFinder onOpenCalculators={() => openCalculator("backtest")} />
+          )}
+          {topTab === "compare" && (
+            <Compare onOpenCalculators={() => openCalculator("lab")} />
+          )}
+
+          {topTab === "calculators" && (
+            <div className="mb-4 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
+              <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
+                <TabButton
+                  active={tab === "options"}
+                  onClick={() => setTab("options")}
+                >
+                  Options pricing
+                </TabButton>
+                <TabButton
+                  active={tab === "risk"}
+                  onClick={() => setTab("risk")}
+                >
+                  Value at Risk
+                </TabButton>
+                <TabButton
+                  active={tab === "portfolio"}
+                  onClick={() => setTab("portfolio")}
+                >
+                  Portfolio
+                </TabButton>
+                <TabButton
+                  active={tab === "backtest"}
+                  onClick={() => setTab("backtest")}
+                >
+                  Backtest
+                </TabButton>
+                <TabButton active={tab === "lab"} onClick={() => setTab("lab")}>
+                  Methods Lab
+                </TabButton>
+              </div>
+            </div>
+          )}
+
+          {topTab === "calculators" && tab === "options" && (
             <div className="space-y-4">
               <TutorialPanel config={optionsTutorial} />
               <div className="inline-flex rounded-lg border border-zinc-300 bg-white p-0.5 shadow-sm">
@@ -408,7 +507,7 @@ export default function Home() {
             </div>
           )}
 
-          {tab === "risk" && (
+          {topTab === "calculators" && tab === "risk" && (
             <>
               <TutorialPanel config={riskTutorial} />
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
@@ -446,7 +545,7 @@ export default function Home() {
             </>
           )}
 
-          {tab === "portfolio" && (
+          {topTab === "calculators" && tab === "portfolio" && (
             <>
               <TutorialPanel config={portfolioTutorial} />
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
@@ -487,7 +586,7 @@ export default function Home() {
             </>
           )}
 
-          {tab === "backtest" && (
+          {topTab === "calculators" && tab === "backtest" && (
             <>
               <TutorialPanel config={backtestTutorial} />
               <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1.5fr]">
@@ -529,9 +628,41 @@ export default function Home() {
             </>
           )}
 
-          <footer className="mt-12 text-xs text-zinc-500">
-            Not investment advice. Calculation engine for educational/analytical
-            use.
+          {topTab === "calculators" && tab === "lab" && (
+            <div className="space-y-4">
+              <section className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 shadow-sm sm:p-6">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                    Lab
+                  </span>
+                  <h2 className="text-sm font-semibold text-zinc-900">
+                    Methods Lab
+                  </h2>
+                </div>
+                <p className="mt-2 max-w-3xl text-xs leading-relaxed text-zinc-700 sm:text-sm">
+                  Invoke any single calculator method directly with raw inputs.
+                  No cross-method check, no invariants, no sensitivity — just
+                  the one method&apos;s number. Useful for comparing methods by
+                  hand or sanity-checking a result the orchestrated pipeline
+                  marked partially verified.
+                </p>
+              </section>
+              <MethodsLab />
+            </div>
+          )}
+
+          <footer className="mt-12 space-y-2 text-xs text-zinc-500">
+            <p>
+              <span className="font-semibold text-zinc-700">
+                Not investment advice.
+              </span>{" "}
+              This is a calculation engine for educational and analytical use.
+              Outputs are based on historical data and mathematical models that
+              can — and do — break in new market regimes. Consult a licensed
+              financial advisor (UK: FCA-authorised; US: SEC/state-registered
+              RIA; EU: MiFID II authorised) before acting on any output. You are
+              responsible for your own trading decisions.
+            </p>
           </footer>
         </div>
       </main>

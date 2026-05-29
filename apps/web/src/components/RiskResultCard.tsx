@@ -3,6 +3,7 @@ import type { FinalAnswer, VaRPayload, VaRRequest } from "@/lib/types";
 import { ConfidenceBreakdown } from "./ConfidenceBreakdown";
 import { InfoTooltip } from "./InfoTooltip";
 import { MethodComparisonBars } from "./MethodComparisonBars";
+import { TraceableMethodScorecard } from "./TraceableMethodScorecard";
 import { PriceChart } from "./PriceChart";
 import { SaveButton } from "./SaveButton";
 import { VaRHistogram } from "./VaRHistogram";
@@ -120,55 +121,25 @@ export function RiskResultCard({ answer, request }: Props) {
           <MethodComparisonBars results={answer.calculator_results} />
         </div>
         {cross && (
-          <div className="mt-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="text-zinc-600">
-                {cross.methods_compared.length} methods · max relative Δ{" "}
-                {(cross.max_relative_delta * 100).toFixed(2)}%
-              </span>
-              <span
-                className={
-                  cross.passed
-                    ? "font-semibold text-emerald-700"
-                    : "font-semibold text-rose-700"
-                }
-              >
-                {cross.passed ? "within tolerance" : "DIVERGENT"}
-              </span>
-            </div>
+          <div className="mt-2 text-[11px] text-zinc-500">
+            Headline pair max relative Δ{" "}
+            {(cross.max_relative_delta * 100).toFixed(2)}% ·{" "}
+            <span
+              className={
+                cross.passed
+                  ? "font-semibold text-emerald-700"
+                  : "font-semibold text-rose-700"
+              }
+            >
+              {cross.passed ? "within tolerance" : "DIVERGENT"}
+            </span>
           </div>
         )}
-        <div className="mt-2 space-y-1">
-          {answer.calculator_results.map((c) => {
-            const isVar = c.payload.kind === "var";
-            const varLoss = isVar ? (c.payload as VaRPayload).var_loss : 0;
-            const cvarLoss = isVar ? (c.payload as VaRPayload).cvar_loss : 0;
-            return (
-              <div
-                key={c.calculator_id}
-                className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-xs"
-              >
-                <span className="text-zinc-700">{c.method_name}</span>
-                <span className="font-mono">
-                  {c.succeeded ? (
-                    <>
-                      <span className="font-semibold text-zinc-900">
-                        VaR {FMT_USD.format(varLoss)}
-                      </span>
-                      <span className="ml-2 text-zinc-500">
-                        CVaR {FMT_USD.format(cvarLoss)}
-                      </span>
-                      <span className="ml-2 text-zinc-400">
-                        {c.duration_ms.toFixed(0)}ms
-                      </span>
-                    </>
-                  ) : (
-                    <span className="font-semibold text-rose-700">FAILED</span>
-                  )}
-                </span>
-              </div>
-            );
-          })}
+        <div className="mt-2">
+          <TraceableMethodScorecard
+            answer={answer}
+            valueFormatter={(v) => `VaR ${FMT_USD.format(v)}`}
+          />
         </div>
       </div>
 

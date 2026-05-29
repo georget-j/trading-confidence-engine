@@ -19,15 +19,23 @@ from src.core.schemas import (
     AuditLog,
     CalcFamily,
     CalculationRequest,
+    CalculatorResult,
     FinalAnswer,
+    OptionsPriceResult,
     OptionsPricingRequest,
     ParsedRequest,
     VerificationStatus,
 )
 from src.parser.options import parse_options_request
 from src.scoring.confidence import score_verification
-from src.verification.cross_method import HEADLINE_METHOD_IDS, cross_check_methods
+from src.verification.cross_method import (
+    DEFAULT_PRICE_ABS_TOL,
+    DEFAULT_PRICE_REL_TOL,
+    HEADLINE_METHOD_IDS,
+    cross_check_methods,
+)
 from src.verification.invariants import check_options_invariants
+from src.verification.per_method import build_per_method_status
 
 
 def run_pipeline(
@@ -79,9 +87,18 @@ def run_pipeline(
     # their inherent precision is looser than the 1e-3 tolerance.
     cross = cross_check_methods(calc_results, include_ids=HEADLINE_METHOD_IDS)
     invariants = check_options_invariants(options_payload, calc_results)
+    per_method = build_per_method_status(
+        results=calc_results,
+        cross_check=cross,
+        value_extractor=_options_price_extractor,
+        invariant_runner=lambda r: check_options_invariants(options_payload, [r]),
+        abs_tol=DEFAULT_PRICE_ABS_TOL,
+        rel_tol=DEFAULT_PRICE_REL_TOL,
+    )
     verification = score_verification(
         cross_check=cross,
         invariants=invariants,
+        per_method_status=per_method,
         input_quality=1.0,
         numerical_stability=1.0,
     )
@@ -106,6 +123,13 @@ def run_pipeline(
     record(log, "respond", answer.model_dump(mode="json"))
 
     return answer, log
+
+
+def _options_price_extractor(r: CalculatorResult) -> float | None:
+    """Pull the comparable scalar (option price) from a method's payload."""
+    if r.succeeded and isinstance(r.payload, OptionsPriceResult):
+        return r.payload.price
+    return None
 
 
 def _build_explanation(
